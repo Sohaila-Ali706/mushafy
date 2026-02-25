@@ -1,0 +1,46 @@
+<main class="quran-page">
+  <header class="page-header">
+    <div>
+      <h1>فهرس المصحف الشريف</h1>
+      <p>اختر السورة لعرض النص أو الاستماع للصوت.</p>
+    </div>
+    <div class="header-actions">
+      <button class="resume-btn" *ngIf="lastRead" type="button" (click)="resumeLastRead()">
+        كمل من آخر قراءة
+        <span class="resume-sub" *ngIf="lastRead?.surahName">({{lastRead.surahName}})</span>
+        <span class="resume-sub" *ngIf="!lastRead?.surahName">سورة رقم {{lastRead.surahNumber}}</span>
+      </button>
+      <button class="back-btn" routerLink="/">العودة للرئيسية</button>
+    </div>
+  </header>
+
+  <div class="search-box">
+    <label for="surahSearch">بحث عن سورة</label>
+    <input id="surahSearch" type="text" [(ngModel)]="searchTerm" placeholder="ابحث بالاسم أو الرقم" />
+  </div>
+
+  <div *ngIf="loading" class="status">جارٍ تحميل الفهرس...</div>
+  <div *ngIf="error" class="status error">{{error}}</div>
+
+  <section class="surah-grid" *ngIf="!loading && !error">
+    <button class="surah-card" *ngFor="let surah of filteredSurahs" (click)="openModal(surah)">
+      <div class="surah-number">{{surah.number}}</div>
+      <div class="surah-title">{{surah.name}}</div>
+      <div class="surah-meta">
+        <span>{{surah.englishName}}</span>
+        <span>عدد الآيات: {{surah.numberOfAyahs}}</span>
+      </div>
+    </button>
+  </section>
+</main>
+
+<div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>سورة {{formatSurahTitle(selectedSurah?.name)}}</h3>
+    <p>اختاري طريقة العرض</p>
+    <div class="modal-actions">
+      <button class="modal-btn primary" (click)="goToText()">نص القراءة</button>
+      <button class="modal-btn" (click)="goToAudio()">الصوت</button>
+    </div>
+  </div>
+</div>

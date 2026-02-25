@@ -1,0 +1,61 @@
+<main class="hadith-page">
+  <header class="page-header">
+    <div>
+      <h1>الأحاديث النبوية</h1>
+      <p>اختاري الكتاب ثم تصفحي الأحاديث أو ابحثي برقم الحديث.</p>
+    </div>
+    <button class="back-btn" routerLink="/">العودة للرئيسية</button>
+  </header>
+
+  <section class="controls">
+    <div class="control">
+      <label for="collection">الكتاب</label>
+      <select id="collection" [value]="selectedCollection" (change)="changeCollection($any($event.target).value)">
+        <option *ngFor="let c of collections" [value]="c.id">{{c.name}}</option>
+      </select>
+    </div>
+    <div class="control">
+      <label for="limit">عدد الأحاديث في الصفحة</label>
+      <input id="limit" type="number" min="5" max="50" [(ngModel)]="limit" />
+    </div>
+    <button class="primary-btn" type="button" (click)="fetchHadiths()">تحديث</button>
+  </section>
+
+  <section class="controls search">
+    <div class="control">
+      <label for="hadithNumber">رقم الحديث</label>
+      <input id="hadithNumber" type="number" [(ngModel)]="hadithNumber" placeholder="مثال: 1" />
+    </div>
+    <button class="ghost-btn" type="button" (click)="fetchSingle()">عرض الحديث</button>
+  </section>
+
+  <div *ngIf="loading" class="status">جارٍ تحميل الأحاديث...</div>
+  <div *ngIf="error" class="status error">{{error}}</div>
+
+  <section class="hadith-single" *ngIf="singleHadith && !loading">
+    <div class="hadith-card">
+      <div class="hadith-head">
+        <span>حديث رقم {{singleHadith.number}}</span>
+      </div>
+      <p class="hadith-ar" *ngIf="singleHadith.arab">{{singleHadith.arab}}</p>
+      <p class="hadith-id" *ngIf="singleHadith.id">{{singleHadith.id}}</p>
+    </div>
+  </section>
+
+  <section class="hadith-grid" *ngIf="!loading && !error && hadiths.length">
+    <article class="hadith-card" *ngFor="let h of hadiths">
+      <div class="hadith-head">
+        <span>حديث رقم {{h.number}}</span>
+        <span *ngIf="h.id">{{h.id}}</span>
+      </div>
+      <p class="hadith-ar" *ngIf="h.arab">{{h.arab}}</p>
+      <p class="hadith-id" *ngIf="h.id">{{h.id}}</p>
+    </article>
+  </section>
+
+  <div class="pagination" *ngIf="!loading && hadiths.length">
+    <button class="ghost-btn" type="button" (click)="goToPage(-1)">السابق</button>
+    <span>صفحة {{page}}</span>
+    <button class="ghost-btn" type="button" (click)="goToPage(1)">التالي</button>
+  </div>
+</main>

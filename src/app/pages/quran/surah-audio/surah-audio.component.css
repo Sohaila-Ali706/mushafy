@@ -1,0 +1,321 @@
+.surah-audio-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.surah-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.surah-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.surah-header h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  color: var(--text);
+}
+
+.surah-header p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.back-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.menu-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.menu-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.reciter-box {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.reciter-box label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.reciter-input {
+  display: flex;
+  gap: 10px;
+}
+
+.reciter-input input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.reciter-input button {
+  border: none;
+  background: var(--gold-500);
+  color: var(--green-900);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.status {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  border-radius: 12px;
+  color: var(--green-900);
+}
+
+.status.error {
+  border-color: #f0c7c7;
+  color: #7a1f1f;
+  background: #fff6f6;
+}
+
+.audio-card {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audio-card audio {
+  width: 100%;
+}
+
+.audio-link {
+  color: var(--text);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 28, 20, 0.4);
+  z-index: 1150;
+}
+
+.surah-drawer {
+  position: fixed;
+  top: var(--nav-height);
+  bottom: 0;
+  right: 0;
+  width: min(360px, 88vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border-color);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+}
+
+.surah-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drawer-header h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.drawer-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.drawer-close {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.drawer-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px 16px 0;
+}
+
+.tab-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tab-btn.active {
+  border-color: var(--gold-500);
+  background: rgba(200, 167, 102, 0.14);
+  font-weight: 700;
+}
+
+.drawer-resume {
+  margin: 12px 16px 0;
+  border: 1px dashed var(--gold-500);
+  background: rgba(200, 167, 102, 0.12);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: right;
+  font-size: 13px;
+}
+
+.drawer-resume .resume-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-inline-start: 6px;
+}
+
+.drawer-search {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.drawer-search input {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.drawer-list {
+  padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+}
+
+.drawer-item {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: right;
+}
+
+.drawer-item.active {
+  border-color: var(--gold-500);
+  background: rgba(200, 167, 102, 0.14);
+}
+
+.drawer-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--surface-muted);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.drawer-name {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .surah-audio-page {
+    padding-inline-start: 400px;
+  }
+
+  .surah-drawer {
+    transform: translateX(0);
+  }
+
+  .drawer-backdrop {
+    display: none;
+  }
+
+  .menu-btn,
+  .drawer-close {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .surah-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reciter-input {
+    flex-direction: column;
+  }
+
+  .surah-actions {
+    width: 100%;
+  }
+}

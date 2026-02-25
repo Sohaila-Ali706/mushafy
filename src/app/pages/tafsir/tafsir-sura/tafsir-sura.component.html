@@ -1,0 +1,67 @@
+<main class="tafsir-sura">
+  <header class="tafsir-header">
+    <div>
+      <h1>تفسير سورة رقم {{surahNumber}}</h1>
+      <p *ngIf="tafsirTitle">النسخة: {{tafsirTitle}}</p>
+    </div>
+    <div class="tafsir-actions">
+      <button class="menu-btn" type="button" (click)="toggleDrawer()">
+        <span class="material-symbols-outlined">menu</span>
+        السور
+      </button>
+      <button class="back-btn" type="button" (click)="goBack()">العودة للرئيسية</button>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="status">جارٍ تحميل التفسير...</div>
+  <div *ngIf="error" class="status error">{{error}}</div>
+
+  <section class="tafsir-list" *ngIf="!loading && !error">
+    <article class="tafsir-item" *ngFor="let item of ayahs"
+             [attr.id]="'ayah-' + item.numberInSurah"
+             [attr.data-ayah]="item.numberInSurah">
+      <div class="ayah-head">
+        <span class="ayah-number">{{item.numberInSurah}}</span>
+        <span class="ayah-label">الآية {{item.numberInSurah}}</span>
+      </div>
+      <p class="tafsir-text">{{item.text}}</p>
+    </article>
+  </section>
+</main>
+
+<div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<aside class="surah-drawer" [class.open]="drawerOpen">
+  <div class="drawer-header">
+    <div>
+      <h3>السور</h3>
+      <p>اختاري سورة أخرى</p>
+    </div>
+    <button class="drawer-close" type="button" (click)="closeDrawer()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div class="drawer-select" *ngIf="tafsirEditions.length">
+    <label for="tafsirEdition">نسخة التفسير</label>
+    <select id="tafsirEdition" [value]="tafsirKey" (change)="updateEdition($any($event.target).value)">
+      <option *ngFor="let t of tafsirEditions" [value]="t.identifier">{{t.name || t.englishName}}</option>
+    </select>
+  </div>
+  <button class="drawer-resume" *ngIf="lastRead" type="button" (click)="resumeLastRead()">
+    كمل من آخر قراءة
+    <span class="resume-sub">سورة رقم {{lastRead.surahNumber}}</span>
+    <span class="resume-sub" *ngIf="lastRead?.tafsirTitle">({{lastRead.tafsirTitle}})</span>
+  </button>
+  <div class="drawer-search">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="بحث عن سورة" />
+  </div>
+  <div class="drawer-list">
+    <button class="drawer-item"
+            *ngFor="let surah of filteredSurahs"
+            [class.active]="surah.number === surahNumber"
+            type="button"
+            (click)="goToSurah(surah)">
+      <span class="drawer-number">{{surah.number}}</span>
+      <span class="drawer-name">{{surah.name}}</span>
+    </button>
+  </div>
+</aside>

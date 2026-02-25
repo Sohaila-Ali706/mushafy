@@ -1,0 +1,135 @@
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+}
+
+.navbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.brand-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 18px rgba(20, 54, 41, 0.25);
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: block;
+}
+
+.brand-text {
+  font-size: 18px;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.nav-links a {
+  padding-bottom: 6px;
+  display: inline-block;
+}
+
+.nav-links a.active {
+  color: var(--text);
+  border-bottom: 2px solid var(--gold-500);
+  font-weight: 700;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-toggle {
+  display: none;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  cursor: pointer;
+}
+
+.theme-toggle {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .navbar-inner {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 16px;
+    position: relative;
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    z-index: 1200;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-actions {
+    justify-content: flex-end;
+  }
+
+  .menu-toggle {
+    display: grid;
+  }
+}

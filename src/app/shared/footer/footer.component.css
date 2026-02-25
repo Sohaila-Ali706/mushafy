@@ -1,0 +1,125 @@
+.site-footer {
+  background: var(--green-800);
+  color: #e9f1ec;
+  padding: 32px 24px 18px;
+  margin-top: 40px;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  max-width: 420px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.brand-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #0f2e23;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+.brand-badge span {
+  color: var(--gold-500);
+  font-size: 20px;
+}
+
+.brand-text {
+  font-size: 18px;
+}
+
+.footer-desc {
+  margin: 0;
+  line-height: 1.8;
+  color: #cdd8d1;
+  font-size: 14px;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  color: #d9e1dc;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-links a:hover {
+  color: var(--gold-500);
+}
+
+.footer-icons {
+  display: flex;
+  gap: 10px;
+}
+
+.footer-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--gold-500);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.footer-icon-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.footer-icon-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2);
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 18px auto 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+  font-size: 12px;
+  color: #c3d0c9;
+}
+
+.footer-name {
+  font-weight: 700;
+  color: var(--gold-300);
+}
+
+@media (max-width: 720px) {
+  .footer-links {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-icons {
+    width: 100%;
+  }
+}

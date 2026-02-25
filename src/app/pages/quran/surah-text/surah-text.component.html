@@ -1,0 +1,79 @@
+<main class="surah-page">
+  <header class="surah-header">
+    <div>
+      <h1>{{surahName || ('سورة رقم ' + surahNumber)}}</h1>
+      <p>عرض نص السورة كاملًا.</p>
+    </div>
+    <div class="surah-actions">
+      <button class="menu-btn" type="button" (click)="toggleDrawer()">
+        <span class="material-symbols-outlined">menu</span>
+        السور
+      </button>
+      <button class="back-btn" routerLink="/">العودة للرئيسية</button>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="status">جارٍ تحميل السورة...</div>
+  <div *ngIf="error" class="status error">{{error}}</div>
+
+  <section class="ayahs-inline" *ngIf="!loading && !error">
+    <div class="mushaf-card">
+      <p class="mushaf-text">
+        <span class="ayah ayah-inline"
+              *ngFor="let ayah of currentPage?.ayahs"
+              [attr.id]="'ayah-' + ayah.numberInSurah"
+              [attr.data-ayah]="ayah.numberInSurah">
+          <span class="ayah-text">{{ayah.text}}</span>
+          <span class="ayah-number">{{ayah.numberInSurah}}</span>
+        </span>
+      </p>
+    </div>
+  </section>
+
+  <div class="page-nav" *ngIf="pages.length > 1">
+    <button class="nav-btn" type="button" (click)="goPrevPage()" [disabled]="currentPageIndex === 0">
+      السابق
+    </button>
+    <div class="page-info">
+      صفحة {{currentPage?.page}} من {{pages.length}}
+    </div>
+    <button class="nav-btn" type="button" (click)="goNextPage()" [disabled]="currentPageIndex >= pages.length - 1">
+      التالي
+    </button>
+  </div>
+</main>
+
+<div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<aside class="surah-drawer" [class.open]="drawerOpen">
+  <div class="drawer-header">
+    <div>
+      <h3>السور</h3>
+      <p>اختاري سورة أخرى</p>
+    </div>
+    <button class="drawer-close" type="button" (click)="closeDrawer()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div class="drawer-tabs">
+    <button class="tab-btn active" type="button">نص القراءة</button>
+    <button class="tab-btn" type="button" (click)="goToAudio()">الصوت</button>
+  </div>
+  <button class="drawer-resume" *ngIf="lastRead" type="button" (click)="resumeLastRead()">
+    كمل من آخر قراءة
+    <span class="resume-sub" *ngIf="lastRead?.surahName">({{lastRead.surahName}})</span>
+    <span class="resume-sub" *ngIf="!lastRead?.surahName">سورة رقم {{lastRead?.surahNumber}}</span>
+  </button>
+  <div class="drawer-search">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="بحث عن سورة" />
+  </div>
+  <div class="drawer-list">
+    <button class="drawer-item"
+            *ngFor="let surah of filteredSurahs"
+            [class.active]="surah.number === surahNumber"
+            type="button"
+            (click)="goToSurah(surah)">
+      <span class="drawer-number">{{surah.number}}</span>
+      <span class="drawer-name">{{surah.name}}</span>
+    </button>
+  </div>
+</aside>

@@ -1,0 +1,35 @@
+<main class="tasbih-page">
+  <header class="page-header">
+    <div>
+      <h1>المسبحة الإلكترونية</h1>
+      <p>اضغطي على العداد للتسبيح، وسيتم الانتقال تلقائيًا بعد اكتمال العدد.</p>
+    </div>
+    <button class="back-btn" routerLink="/">العودة للرئيسية</button>
+  </header>
+
+  <section class="tasbih-card" *ngIf="currentDhikr">
+    <div class="dhikr-head">
+      <span class="dhikr-index">الذكر رقم {{currentIndex + 1}} من {{dhikrList.length}}</span>
+      <span class="dhikr-target">العدد المطلوب: {{currentDhikr.target}}</span>
+    </div>
+
+    <h2 class="dhikr-title">{{currentDhikr.title}}</h2>
+    <p class="dhikr-text">{{currentDhikr.text}}</p>
+    <p class="dhikr-note" *ngIf="currentDhikr.note">{{currentDhikr.note}}</p>
+
+    <button class="counter-btn" type="button" (click)="increment()">
+      <span class="counter-value">{{count}}</span>
+      <span class="counter-label">اضغطي للعد</span>
+    </button>
+
+    <div class="progress">
+      {{count}} / {{currentDhikr.target}}
+    </div>
+
+    <div class="actions">
+      <button class="ghost-btn" type="button" (click)="prev()">السابق</button>
+      <button class="ghost-btn" type="button" (click)="reset()">تصفير العداد</button>
+      <button class="primary-btn" type="button" (click)="next()">التالي</button>
+    </div>
+  </section>
+</main>

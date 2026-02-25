@@ -1,0 +1,66 @@
+<main class="surah-audio-page">
+  <header class="surah-header">
+    <div>
+      <h1>الاستماع إلى {{currentSurahName}}</h1>
+      <p>يمكنك تغيير رقم المُقرئ إذا لزم الأمر.</p>
+    </div>
+    <div class="surah-actions">
+      <button class="menu-btn" type="button" (click)="toggleDrawer()">
+        <span class="material-symbols-outlined">menu</span>
+        السور
+      </button>
+      <button class="back-btn" routerLink="/">العودة للرئيسية</button>
+    </div>
+  </header>
+
+  <div class="reciter-box">
+    <label for="reciterId">رقم المُقرئ</label>
+    <div class="reciter-input">
+      <input id="reciterId" type="number" [value]="reciterId" (change)="updateReciter($any($event.target).value)" />
+      <button (click)="loadAudio()">تحديث</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="status">جارٍ تحميل الصوت...</div>
+  <div *ngIf="error" class="status error">{{error}}</div>
+
+  <div class="audio-card" *ngIf="!loading && !error && audioUrl">
+    <audio [src]="audioUrl" controls preload="metadata"></audio>
+    <a class="audio-link" [href]="audioUrl" target="_blank" rel="noreferrer">فتح الصوت في تبويب جديد</a>
+  </div>
+</main>
+
+<div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<aside class="surah-drawer" [class.open]="drawerOpen">
+  <div class="drawer-header">
+    <div>
+      <h3>السور</h3>
+      <p>اختاري سورة أخرى</p>
+    </div>
+    <button class="drawer-close" type="button" (click)="closeDrawer()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div class="drawer-tabs">
+    <button class="tab-btn" type="button" (click)="goToText()">نص القراءة</button>
+    <button class="tab-btn active" type="button">الصوت</button>
+  </div>
+  <button class="drawer-resume" *ngIf="lastRead" type="button" (click)="resumeLastRead()">
+    كمل من آخر قراءة
+    <span class="resume-sub" *ngIf="lastRead?.surahName">({{lastRead.surahName}})</span>
+    <span class="resume-sub" *ngIf="!lastRead?.surahName">سورة رقم {{lastRead?.surahNumber}}</span>
+  </button>
+  <div class="drawer-search">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="بحث عن سورة" />
+  </div>
+  <div class="drawer-list">
+    <button class="drawer-item"
+            *ngFor="let surah of filteredSurahs"
+            [class.active]="surah.number === surahNumber"
+            type="button"
+            (click)="goToSurah(surah)">
+      <span class="drawer-number">{{surah.number}}</span>
+      <span class="drawer-name">{{surah.name}}</span>
+    </button>
+  </div>
+</aside>

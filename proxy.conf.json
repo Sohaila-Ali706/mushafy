@@ -1,0 +1,34 @@
+{
+  "/api/tafsir": {
+    "target": "https://quranenc.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/tafsir": ""
+    }
+  },
+  "/api/hadith": {
+    "target": "https://api.hadith.gading.dev",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/hadith": ""
+    }
+  },
+  "/api/azkar": {
+    "target": "https://www.hisnmuslim.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/azkar": ""
+    }
+  },
+  "/api/azkar-list": {
+    "target": "https://raw.githubusercontent.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/azkar-list": ""
+    }
+  }
+}

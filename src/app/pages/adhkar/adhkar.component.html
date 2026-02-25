@@ -1,0 +1,44 @@
+<main class="adhkar-page">
+  <header class="page-header">
+    <div>
+      <h1>الأذكار</h1>
+      <p>اختاري القسم لعرض الأذكار.</p>
+    </div>
+    <button class="back-btn" routerLink="/">العودة للرئيسية</button>
+  </header>
+
+  <div *ngIf="listError" class="status error">{{listError}}</div>
+
+  <section class="adhkar-layout" *ngIf="!listError">
+    <aside class="categories">
+      <h3>الأقسام</h3>
+      <button
+        class="category-btn"
+        *ngFor="let c of categories"
+        [class.active]="selectedCategory?.id === c.id"
+        (click)="selectCategory(c)">
+        {{c.title}}
+      </button>
+    </aside>
+
+    <section class="adhkar-content" #adhkarContent>
+      <div class="content-header" *ngIf="selectedCategory">
+        <h2>{{selectedCategory.title}}</h2>
+      </div>
+
+      <div *ngIf="loading" class="status">جارٍ تحميل الأذكار...</div>
+      <div *ngIf="error" class="status error">{{error}}</div>
+
+      <div class="adhkar-list" *ngIf="!loading && !error">
+        <article class="adhkar-card" *ngFor="let item of items; let i = index">
+          <div class="adhkar-head">
+            <span>ذكر رقم {{i + 1}}</span>
+            <span *ngIf="item.count">التكرار: {{item.count}}</span>
+          </div>
+          <p class="adhkar-text">{{item.text}}</p>
+          <p class="adhkar-ref" *ngIf="item.reference">{{item.reference}}</p>
+        </article>
+      </div>
+    </section>
+  </section>
+</main>

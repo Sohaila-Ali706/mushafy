@@ -1,0 +1,234 @@
+.quran-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.page-header h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  color: var(--text);
+}
+
+.page-header p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.back-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.resume-btn {
+  border: 1px solid var(--gold-500);
+  background: rgba(200, 167, 102, 0.16);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.resume-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-inline-start: 6px;
+}
+
+.search-box {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-box label {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.search-box input {
+  flex: 1;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.status {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  border-radius: 12px;
+  color: var(--green-900);
+}
+
+.status.error {
+  border-color: #f0c7c7;
+  color: #7a1f1f;
+  background: #fff6f6;
+}
+
+.surah-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.surah-card {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 10px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 88px;
+}
+
+.surah-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 26px rgba(20, 54, 41, 0.12);
+}
+
+.surah-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--surface-muted);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.surah-title {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.surah-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 28, 20, 0.4);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 24px;
+  min-width: 280px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 18px 40px rgba(20, 54, 41, 0.18);
+}
+
+.modal h3 {
+  margin: 0 0 6px;
+  color: var(--green-900);
+}
+
+.modal p {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+
+.modal-btn.primary {
+  background: var(--gold-500);
+  border-color: var(--gold-500);
+  color: var(--green-900);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .surah-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .surah-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .surah-card {
+    padding: 8px;
+    min-height: 78px;
+  }
+
+  .surah-title {
+    font-size: 13.5px;
+  }
+
+  .surah-meta {
+    font-size: 9.5px;
+  }
+}

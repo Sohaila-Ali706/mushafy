@@ -1,0 +1,28 @@
+﻿<header class="site-header">
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a class="nav-brand" routerLink="/">
+        <div class="brand-badge">
+          <img class="brand-icon" src="assets/favicon.svg" alt="مصحفي">
+        </div>
+        <span class="brand-text">مصحفي</span>
+      </a>
+      <ul class="nav-links" [class.open]="isMenuOpen" (click)="closeMenu()">
+        <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">الرئيسية</a></li>
+        <li><a routerLink="/quran" routerLinkActive="active">القرآن الكريم</a></li>
+        <li><a routerLink="/tafsir" routerLinkActive="active">التفسير</a></li>
+        <li><a routerLink="/hadith" routerLinkActive="active">الأحاديث</a></li>
+        <li><a routerLink="/adhkar" routerLinkActive="active">الأذكار</a></li>
+        <li><a routerLink="/tasbih" routerLinkActive="active">المسبحة</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="قائمة التنقل">
+          <span class="material-symbols-outlined">{{isMenuOpen ? 'close' : 'menu'}}</span>
+        </button>
+        <button class="theme-toggle" type="button" (click)="toggleTheme()" aria-label="تبديل المظهر">
+          <span class="material-symbols-outlined">{{isDark ? 'light_mode' : 'dark_mode'}}</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</header>

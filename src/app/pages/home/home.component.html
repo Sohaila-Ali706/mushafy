@@ -1,0 +1,83 @@
+<main class="home">
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <div class="hero-header">
+        <h1>مواقيت الصلاة اليوم</h1>
+        <p>{{locationLabel}} - {{hijriLabel}}</p>
+      </div>
+
+      <div class="timing-status" *ngIf="loadingTimings">جارٍ تحميل المواقيت...</div>
+      <div class="timing-status error" *ngIf="timingError">{{timingError}}</div>
+
+      <div class="prayer-grid">
+        <div class="prayer-card" *ngFor="let prayer of prayers" [class.highlight]="prayer.highlight">
+          <span class="material-symbols-outlined">{{prayer.icon}}</span>
+          <span class="prayer-name">{{prayer.name}}</span>
+          <span class="prayer-time">{{prayer.time}}</span>
+        </div>
+      </div>
+
+      <div class="next-prayer" *ngIf="nextPrayerLabel">
+        <span class="next-label">الصلاة القادمة: {{nextPrayerLabel}}</span>
+        <span class="next-time">{{nextPrayerTime}}</span>
+        <span class="next-countdown">{{countdown}}</span>
+      </div>
+
+      <button class="location-btn" type="button" (click)="toggleLocationPanel()">
+        <span class="material-symbols-outlined">location_on</span>
+        تغيير الموقع
+      </button>
+
+      <div class="location-panel" *ngIf="showCityForm">
+        <div class="field">
+          <label>المدينة</label>
+          <input type="text" [(ngModel)]="city" placeholder="مثال: Cairo" />
+        </div>
+        <div class="field">
+          <label>الدولة</label>
+          <input type="text" [(ngModel)]="country" placeholder="مثال: Egypt" />
+        </div>
+        <div class="location-actions">
+          <button class="apply-btn" type="button" (click)="applyCity()">تطبيق</button>
+          <button class="ghost-btn" type="button" (click)="useCurrentLocation()">استخدام موقعي</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="categories">
+    <div class="section-title">الأقسام الرئيسية</div>
+    <div class="cards-grid">
+      <article class="info-card"
+               *ngFor="let card of mainCards"
+               [class.wide]="card.wide"
+               [class.clickable]="card.link"
+               [routerLink]="card.link || null"
+               [attr.tabindex]="card.link ? 0 : null">
+        <div class="card-icon">
+          <span class="material-symbols-outlined">{{card.icon}}</span>
+        </div>
+        <div class="card-body">
+          <h4>{{card.title}}</h4>
+          <p>{{card.desc}}</p>
+        </div>
+        <span class="card-tag" *ngIf="card.tag">{{card.tag}}</span>
+      </article>
+    </div>
+  </section>
+
+  <section class="verse-section">
+    <div class="verse-card">
+      <span class="material-symbols-outlined quote-icon">format_quote</span>
+      <p class="verse-label">آية اليوم</p>
+      <h3 class="verse-text">"{{verse.text}}"</h3>
+      <p class="verse-source">{{verse.source}}</p>
+      <div class="verse-actions">
+        <button class="icon-btn" type="button" (click)="shareVerse()" aria-label="مشاركة آية اليوم">
+          <span class="material-symbols-outlined">share</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</main>
