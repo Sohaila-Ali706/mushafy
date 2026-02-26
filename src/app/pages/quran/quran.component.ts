@@ -46,7 +46,7 @@ export class QuranComponent implements OnInit {
   fetchSurahs(): void {
     this.loading = true;
     this.error = '';
-    this.http.get<ApiResponse<Surah[]>>('http://api.alquran.cloud/v1/surah').subscribe({
+    this.http.get<ApiResponse<Surah[]>>('https://api.alquran.cloud/v1/surah').subscribe({
       next: (res) => {
         this.surahs = res?.data ?? [];
       },

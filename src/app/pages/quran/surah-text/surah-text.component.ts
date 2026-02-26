@@ -93,7 +93,7 @@ export class SurahTextComponent implements OnInit, OnDestroy {
   fetchSurah(): void {
     this.loading = true;
     this.error = '';
-    this.http.get<ApiResponse<SurahData>>(`http://api.alquran.cloud/v1/surah/${this.surahNumber}`).subscribe({
+    this.http.get<ApiResponse<SurahData>>(`https://api.alquran.cloud/v1/surah/${this.surahNumber}`).subscribe({
       next: (res) => {
         const data = res?.data;
         this.surahName = data?.name ?? '';

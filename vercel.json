@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/api/hadith/:path*", "destination": "https://api.hadith.gading.dev/:path*" },
+    { "source": "/api/azkar/:path*", "destination": "https://www.hisnmuslim.com/:path*" },
+    { "source": "/api/tafsir/:path*", "destination": "https://quranenc.com/:path*" },
+    { "source": "/api/azkar-list/:path*", "destination": "https://raw.githubusercontent.com/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
