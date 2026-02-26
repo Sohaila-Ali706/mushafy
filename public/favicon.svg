@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mushafy">
+  <rect width="64" height="64" rx="12" fill="#143629"/>
+  <path d="M18 20h14c5 0 9 4 9 9v17H27c-5 0-9-4-9-9V20z" fill="#f7f6f1"/>
+  <path d="M46 20H32c-5 0-9 4-9 9v17h14c5 0 9-4 9-9V20z" fill="#efe8d6"/>
+  <path d="M32 20v26" stroke="#c8a766" stroke-width="2"/>
+  <path d="M20 22h10m0 6h-8m18-6h-10m10 6h-8" stroke="#c8a766" stroke-width="2" stroke-linecap="round"/>
+</svg>
