@@ -30,17 +30,15 @@
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: transparent;
+  background: #0f2e23;
   display: grid;
   place-items: center;
   box-shadow: 0 8px 18px rgba(20, 54, 41, 0.25);
 }
 
-.brand-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  display: block;
+.brand-badge span {
+  color: var(--gold-500);
+  font-size: 20px;
 }
 
 .brand-text {

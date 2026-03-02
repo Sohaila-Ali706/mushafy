@@ -10,6 +10,7 @@ type Ayah = {
   numberInSurah: number;
   text: string;
   page?: number;
+  juz?: number;
 };
 
 type SurahData = {
@@ -33,6 +34,7 @@ type LastRead = {
 type PageBlock = {
   page: number;
   ayahs: Ayah[];
+  juz?: number;
 };
 
 @Component({
@@ -123,14 +125,15 @@ export class SurahTextComponent implements OnInit, OnDestroy {
       this.pages = Array.from(map.entries())
         .filter(([page]) => page > 0)
         .sort((a, b) => a[0] - b[0])
-        .map(([page, ayahs]) => ({ page, ayahs }));
+        .map(([page, ayahs]) => ({ page, ayahs, juz: ayahs[0]?.juz }));
     } else {
       const chunkSize = 10;
       const pages: PageBlock[] = [];
       for (let i = 0; i < this.ayahs.length; i += chunkSize) {
         pages.push({
           page: Math.floor(i / chunkSize) + 1,
-          ayahs: this.ayahs.slice(i, i + chunkSize)
+          ayahs: this.ayahs.slice(i, i + chunkSize),
+          juz: undefined
         });
       }
       this.pages = pages;
@@ -175,6 +178,12 @@ export class SurahTextComponent implements OnInit, OnDestroy {
 
   get currentPage(): PageBlock | null {
     return this.pages[this.currentPageIndex] || null;
+  }
+
+  get currentJuzLabel(): string {
+    const juz = this.currentPage?.juz;
+    if (!juz || !Number.isFinite(juz)) return '';
+    return `الجزء ${this.toArabicOrdinal(juz)}`;
   }
 
   goNextPage(): void {
@@ -307,6 +316,42 @@ export class SurahTextComponent implements OnInit, OnDestroy {
       .replace(/ة/g, 'ه')
       .trim()
       .toLowerCase();
+  }
+
+  private toArabicOrdinal(value: number): string {
+    const map: Record<number, string> = {
+      1: 'الأول',
+      2: 'الثاني',
+      3: 'الثالث',
+      4: 'الرابع',
+      5: 'الخامس',
+      6: 'السادس',
+      7: 'السابع',
+      8: 'الثامن',
+      9: 'التاسع',
+      10: 'العاشر',
+      11: 'الحادي عشر',
+      12: 'الثاني عشر',
+      13: 'الثالث عشر',
+      14: 'الرابع عشر',
+      15: 'الخامس عشر',
+      16: 'السادس عشر',
+      17: 'السابع عشر',
+      18: 'الثامن عشر',
+      19: 'التاسع عشر',
+      20: 'العشرون',
+      21: 'الحادي والعشرون',
+      22: 'الثاني والعشرون',
+      23: 'الثالث والعشرون',
+      24: 'الرابع والعشرون',
+      25: 'الخامس والعشرون',
+      26: 'السادس والعشرون',
+      27: 'السابع والعشرون',
+      28: 'الثامن والعشرون',
+      29: 'التاسع والعشرون',
+      30: 'الثلاثون'
+    };
+    return map[value] || value.toString();
   }
 
   private loadLastRead(): void {

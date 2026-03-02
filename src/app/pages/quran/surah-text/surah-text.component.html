@@ -17,6 +17,10 @@
   <div *ngIf="error" class="status error">{{error}}</div>
 
   <section class="ayahs-inline" *ngIf="!loading && !error">
+    <div class="page-meta">
+      <span class="juz-label" *ngIf="currentJuzLabel">{{currentJuzLabel}}</span>
+      <span class="surah-label">{{surahName}}</span>
+    </div>
     <div class="mushaf-card">
       <p class="mushaf-text">
         <span class="ayah ayah-inline"

@@ -14,11 +14,14 @@
   </header>
 
   <div class="reciter-box">
-    <label for="reciterId">رقم المُقرئ</label>
+    <label for="reciterId">اسم المُقرئ</label>
     <div class="reciter-input">
-      <input id="reciterId" type="number" [value]="reciterId" (change)="updateReciter($any($event.target).value)" />
+      <select id="reciterId" [value]="reciterId" (change)="updateReciter($any($event.target).value)">
+        <option *ngFor="let reciter of reciters" [value]="reciter.id">{{reciter.name}}</option>
+      </select>
       <button (click)="loadAudio()">تحديث</button>
     </div>
+    <div class="reciter-current">المُقرئ الحالي: {{currentReciterName}}</div>
   </div>
 
   <div *ngIf="loading" class="status">جارٍ تحميل الصوت...</div>

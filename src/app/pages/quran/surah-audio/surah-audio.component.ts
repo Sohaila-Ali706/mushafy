@@ -14,6 +14,11 @@ type LastRead = {
   surahName?: string;
 };
 
+type Reciter = {
+  id: number;
+  name: string;
+};
+
 @Component({
   selector: 'app-surah-audio',
   standalone: false,
@@ -23,6 +28,16 @@ type LastRead = {
 export class SurahAudioComponent implements OnInit, OnDestroy {
   surahNumber = 1;
   reciterId = 7;
+  reciters: Reciter[] = [];
+  private readonly fallbackReciters: Reciter[] = [
+    { id: 1, name: 'الشيخ 1' },
+    { id: 2, name: 'الشيخ 2' },
+    { id: 3, name: 'الشيخ 3' },
+    { id: 4, name: 'الشيخ 4' },
+    { id: 5, name: 'الشيخ 5' },
+    { id: 6, name: 'الشيخ 6' },
+    { id: 7, name: 'الشيخ 7' }
+  ];
   audioUrl = '';
   surahList: SurahMeta[] = [];
   searchTerm = '';
@@ -40,6 +55,7 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
       this.surahNumber = Number(param || 1);
       this.loadAudio();
     });
+    this.fetchReciters();
     this.fetchSurahList();
     this.loadLastRead();
   }
@@ -113,6 +129,10 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
     return found?.name || `سورة رقم ${this.surahNumber}`;
   }
 
+  get currentReciterName(): string {
+    return this.reciters.find((r) => r.id === this.reciterId)?.name || `الشيخ ${this.reciterId}`;
+  }
+
   loadAudio(): void {
     this.loading = true;
     this.error = '';
@@ -137,6 +157,78 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
         this.loading = false;
       }
     });
+  }
+
+  fetchReciters(): void {
+    const url = 'https://api.quran.com/api/v4/chapter_reciters?language=ar';
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        const list = res?.reciters || res?.data || [];
+        const mapped: Reciter[] = list
+          .map((r: any) => ({
+            id: Number(r.id),
+            name: this.pickArabicName(r)
+          }))
+          .filter((r: Reciter) => Number.isFinite(r.id) && !!r.name);
+        this.applyReciters(this.dedupeReciters(mapped));
+      },
+      error: () => {
+        const fallbackUrl = 'https://api.quran.com/api/v4/resources/recitations?language=ar';
+        this.http.get<any>(fallbackUrl).subscribe({
+          next: (res) => {
+            const list = res?.recitations || res?.data || res || [];
+            const mapped: Reciter[] = list
+              .map((r: any) => ({
+                id: Number(r.id),
+                name: this.pickArabicName(r)
+              }))
+              .filter((r: Reciter) => Number.isFinite(r.id) && !!r.name);
+            this.applyReciters(this.dedupeReciters(mapped));
+          },
+          error: () => {
+            this.applyReciters(this.fallbackReciters);
+          }
+        });
+      }
+    });
+  }
+
+  private applyReciters(list: Reciter[]): void {
+    if (!list.length) {
+      this.reciters = [...this.fallbackReciters];
+      return;
+    }
+    this.reciters = list;
+    if (!this.reciters.find((r) => r.id === this.reciterId)) {
+      this.reciterId = this.reciters[0].id;
+      this.loadAudio();
+    }
+  }
+
+  private pickArabicName(item: any): string {
+    const candidates = [
+      item?.arabic_name,
+      item?.reciter_name,
+      item?.name,
+      item?.translated_name?.name
+    ].filter(Boolean);
+    const arabic = candidates.find((value: string) => /[\u0600-\u06FF]/.test(value));
+    return (arabic || candidates[0] || '').toString().trim();
+  }
+
+  private dedupeReciters(list: Reciter[]): Reciter[] {
+    const seenIds = new Set<number>();
+    const seenNames = new Set<string>();
+    const result: Reciter[] = [];
+    for (const reciter of list) {
+      if (seenIds.has(reciter.id)) continue;
+      const key = reciter.name.replace(/\s+/g, ' ').trim();
+      if (seenNames.has(key)) continue;
+      seenIds.add(reciter.id);
+      seenNames.add(key);
+      result.push(reciter);
+    }
+    return result;
   }
 
   private normalizeArabic(value: string): string {
