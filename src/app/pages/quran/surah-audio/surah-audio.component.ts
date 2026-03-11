@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { AUDIO_BASE, OFFLINE_BASE, OFFLINE_MODE, buildUrl, padSurah } from '../../../shared/offline';
 
 type SurahMeta = {
   number: number;
@@ -98,7 +99,9 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
   }
 
   fetchSurahList(): void {
-    this.http.get<{ data: SurahMeta[] }>('https://api.alquran.cloud/v1/surah').subscribe({
+    this.http.get<{ data: SurahMeta[] }>(
+      buildUrl('quran/surah-list.json', 'https://api.alquran.cloud/v1/surah')
+    ).subscribe({
       next: (res) => {
         this.surahList = res?.data ?? [];
       },
@@ -137,6 +140,12 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = '';
     this.audioUrl = '';
+    if (OFFLINE_MODE) {
+      this.audioUrl = `${AUDIO_BASE}/${this.reciterId}/${padSurah(this.surahNumber)}.mp3`;
+      this.loading = false;
+      return;
+    }
+
     const url = `https://api.quran.com/api/v4/chapter_recitations/${this.reciterId}/${this.surahNumber}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
@@ -160,6 +169,25 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
   }
 
   fetchReciters(): void {
+    if (OFFLINE_MODE) {
+      this.http.get<any>(`${OFFLINE_BASE}/reciters.json`).subscribe({
+        next: (res) => {
+          const list = res?.reciters || res?.data || res || [];
+          const mapped: Reciter[] = list
+            .map((r: any) => ({
+              id: Number(r.id),
+              name: this.pickArabicName(r)
+            }))
+            .filter((r: Reciter) => Number.isFinite(r.id) && !!r.name);
+          this.applyReciters(this.dedupeReciters(mapped));
+        },
+        error: () => {
+          this.applyReciters(this.fallbackReciters);
+        }
+      });
+      return;
+    }
+
     const url = 'https://api.quran.com/api/v4/chapter_reciters?language=ar';
     this.http.get<any>(url).subscribe({
       next: (res) => {

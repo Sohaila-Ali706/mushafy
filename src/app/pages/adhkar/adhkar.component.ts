@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { OFFLINE_BASE, OFFLINE_MODE, buildUrl } from '../../shared/offline';
 
 type AdhkarCategory = {
   id: number | string;
@@ -35,7 +36,7 @@ export class AdhkarComponent implements OnInit {
   }
 
   fetchCategories(): void {
-    const url = '/api/azkar/api/husn.json';
+    const url = buildUrl('adhkar/husn.json', '/api/azkar/api/husn.json');
     this.http.get<any>(url).subscribe({
       next: (res) => {
         const main = Array.isArray(res?.MAIN) ? res.MAIN : [];
@@ -224,7 +225,7 @@ export class AdhkarComponent implements OnInit {
   fetchCategoryItems(id: number | string, url?: string): void {
     this.loading = true;
     this.error = '';
-    const target = url ? this.toProxyUrl(url) : `/api/azkar/api/ar/${id}.json`;
+    const target = url ? this.toProxyUrl(url) : buildUrl(`adhkar/${id}.json`, `/api/azkar/api/ar/${id}.json`);
     this.http.get<any>(target).subscribe({
       next: (res) => {
         const list =
@@ -300,6 +301,12 @@ export class AdhkarComponent implements OnInit {
   }
 
   toProxyUrl(url: string): string {
+    if (OFFLINE_MODE) {
+      if (url.startsWith('/offline/')) return url;
+      if (url.includes('husn_ar.json')) return `${OFFLINE_BASE}/adhkar/husn_ar.json`;
+      const id = this.extractIdFromUrl(url);
+      if (id) return `${OFFLINE_BASE}/adhkar/${id}.json`;
+    }
     if (url.startsWith('/api/azkar')) return url;
     if (url.startsWith('https://www.hisnmuslim.com')) {
       return url.replace('https://www.hisnmuslim.com', '/api/azkar');

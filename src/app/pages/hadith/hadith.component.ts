@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { OFFLINE_MODE, buildUrl } from '../../shared/offline';
 
 type HadithItem = {
   number?: number;
@@ -31,6 +32,7 @@ export class HadithComponent implements OnInit {
   hadiths: HadithItem[] = [];
   hadithNumber = '';
   singleHadith: HadithItem | null = null;
+  private offlineCache = new Map<string, HadithItem[]>();
   private readonly nameMap: Record<string, string> = {
     'bukhari': 'صحيح البخاري',
     'muslim': 'صحيح مسلم',
@@ -52,7 +54,8 @@ export class HadithComponent implements OnInit {
   fetchBooks(): void {
     this.loading = true;
     this.error = '';
-    this.http.get<any>('/api/hadith/books').subscribe({
+    const url = buildUrl('hadith/books.json', '/api/hadith/books');
+    this.http.get<any>(url).subscribe({
       next: (res) => {
         const list = res?.data ?? res ?? [];
         this.collections = Array.isArray(list)
@@ -84,7 +87,19 @@ export class HadithComponent implements OnInit {
     this.limit = safeLimit;
     const start = (this.page - 1) * safeLimit + 1;
     const end = start + safeLimit - 1;
-    const url = `/api/hadith/books/${this.selectedCollection}?range=${start}-${end}`;
+    if (OFFLINE_MODE) {
+      this.loadOfflineCollection(() => {
+        const list = this.offlineCache.get(this.selectedCollection) || [];
+        this.totalPages = Math.ceil(list.length / safeLimit);
+        this.hadiths = list.slice(start - 1, end);
+        this.loading = false;
+      });
+      return;
+    }
+    const url = buildUrl(
+      `hadith/${this.selectedCollection}/range-${start}-${end}.json`,
+      `/api/hadith/books/${this.selectedCollection}?range=${start}-${end}`
+    );
     this.http.get<any>(url).subscribe({
       next: (res) => {
         const list = res?.data?.contents ?? res?.contents ?? [];
@@ -122,7 +137,30 @@ export class HadithComponent implements OnInit {
     }
     this.loading = true;
     this.error = '';
-    const url = `/api/hadith/books/${this.selectedCollection}/${num}`;
+    if (OFFLINE_MODE) {
+      this.loadOfflineCollection(() => {
+        const list = this.offlineCache.get(this.selectedCollection) || [];
+        const found =
+          list.find((item) => Number(item.number) === num) ||
+          list.find((item) => Number(item.id) === num);
+        this.singleHadith = found
+          ? {
+              number: found.number || num,
+              arab: found.arab || '',
+              id: found.id || ''
+            }
+          : null;
+        if (!this.singleHadith) {
+          this.error = 'تعذر تحميل الحديث.';
+        }
+        this.loading = false;
+      });
+      return;
+    }
+    const url = buildUrl(
+      `hadith/${this.selectedCollection}/hadith-${num}.json`,
+      `/api/hadith/books/${this.selectedCollection}/${num}`
+    );
     this.http.get<any>(url).subscribe({
       next: (res) => {
         const item = res?.data?.contents || res?.contents || res?.data || res || {};
@@ -138,6 +176,27 @@ export class HadithComponent implements OnInit {
       },
       complete: () => {
         this.loading = false;
+      }
+    });
+  }
+
+  private loadOfflineCollection(done: () => void): void {
+    const cached = this.offlineCache.get(this.selectedCollection);
+    if (cached) {
+      done();
+      return;
+    }
+    const url = buildUrl(`hadith/${this.selectedCollection}/all.json`, '/api/hadith/books');
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        const list = res?.data?.contents ?? res?.contents ?? res ?? [];
+        this.offlineCache.set(this.selectedCollection, Array.isArray(list) ? list : []);
+      },
+      error: () => {
+        this.error = 'تعذر تحميل الأحاديث الآن.';
+      },
+      complete: () => {
+        done();
       }
     });
   }

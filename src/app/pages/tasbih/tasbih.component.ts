@@ -170,16 +170,24 @@ export class TasbihComponent implements OnInit {
 
   next(): void {
     if (!this.dhikrList.length) return;
+    const currentId = this.currentDhikr?.id;
+    if (currentId) {
+      this.persistCount(currentId, this.count);
+    }
     this.currentIndex = (this.currentIndex + 1) % this.dhikrList.length;
-    this.count = 0;
+    this.count = this.getPersistedCount(this.currentDhikr?.id);
     this.saveProgress();
   }
 
   prev(): void {
     if (!this.dhikrList.length) return;
+    const currentId = this.currentDhikr?.id;
+    if (currentId) {
+      this.persistCount(currentId, this.count);
+    }
     this.currentIndex =
       (this.currentIndex - 1 + this.dhikrList.length) % this.dhikrList.length;
-    this.count = 0;
+    this.count = this.getPersistedCount(this.currentDhikr?.id);
     this.saveProgress();
   }
 
@@ -190,6 +198,10 @@ export class TasbihComponent implements OnInit {
 
   private saveProgress(): void {
     try {
+      const currentId = this.currentDhikr?.id;
+      if (currentId) {
+        this.persistCount(currentId, this.count);
+      }
       const payload = {
         index: this.currentIndex,
         count: this.count,
@@ -216,6 +228,30 @@ export class TasbihComponent implements OnInit {
       }
     } catch {
       // ignore storage errors
+    }
+  }
+
+  private persistCount(id: number, count: number): void {
+    try {
+      const raw = localStorage.getItem('mushafy_tasbih_counts');
+      const map = raw ? JSON.parse(raw) : {};
+      map[id] = count;
+      localStorage.setItem('mushafy_tasbih_counts', JSON.stringify(map));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private getPersistedCount(id?: number): number {
+    if (!id) return 0;
+    try {
+      const raw = localStorage.getItem('mushafy_tasbih_counts');
+      if (!raw) return 0;
+      const map = JSON.parse(raw);
+      const value = Number(map?.[id] ?? 0);
+      return Number.isFinite(value) ? value : 0;
+    } catch {
+      return 0;
     }
   }
 }

@@ -50,8 +50,8 @@
   </div>
   <button class="drawer-resume" *ngIf="lastRead" type="button" (click)="resumeLastRead()">
     كمل من آخر قراءة
-    <span class="resume-sub" *ngIf="lastRead?.surahName">({{lastRead.surahName}})</span>
-    <span class="resume-sub" *ngIf="!lastRead?.surahName">سورة رقم {{lastRead?.surahNumber}}</span>
+    <span class="resume-sub" *ngIf="lastRead.surahName">({{lastRead.surahName}})</span>
+    <span class="resume-sub" *ngIf="!lastRead.surahName">سورة رقم {{lastRead.surahNumber}}</span>
   </button>
   <div class="drawer-search">
     <input type="text" [(ngModel)]="searchTerm" placeholder="بحث عن سورة" />

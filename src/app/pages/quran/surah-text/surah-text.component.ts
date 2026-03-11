@@ -1,6 +1,8 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { buildUrl, padSurah } from '../../../shared/offline';
 
 type ApiResponse<T> = {
   data: T;
@@ -31,8 +33,9 @@ type LastRead = {
   surahName?: string;
 };
 
-type PageBlock = {
-  page: number;
+type MushafSection = {
+  number: number;
+  name: string;
   ayahs: Ayah[];
   juz?: number;
 };
@@ -45,20 +48,18 @@ type PageBlock = {
 })
 export class SurahTextComponent implements OnInit, OnDestroy {
   surahNumber = 1;
-  surahName = '';
-  ayahs: Ayah[] = [];
-  pages: PageBlock[] = [];
-  currentPageIndex = 0;
+  mushafSections: MushafSection[] = [];
   surahList: SurahMeta[] = [];
   searchTerm = '';
   drawerOpen = false;
   lastRead: LastRead | null = null;
   loading = true;
   error = '';
-  private readonly progressKey = 'mushafy_surah_text_progress';
+  private readonly progressKey = 'mushafy_mushaf_progress';
   private scrollTimer: number | undefined;
   private navSub: any;
   private paramSub: any;
+  private mushafLoaded = false;
 
   constructor(private route: ActivatedRoute, private router: Router, private http: HttpClient) {}
 
@@ -71,10 +72,12 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     this.paramSub = this.route.paramMap.subscribe((params) => {
       const param = params.get('surahNumber');
       this.surahNumber = Number(param || 1);
-      this.fetchSurah();
+      if (this.mushafLoaded) {
+        setTimeout(() => this.scrollToSurah(this.surahNumber), 0);
+      }
     });
     this.loadLastRead();
-    this.fetchSurahList();
+    this.fetchMushaf();
   }
 
   ngOnDestroy(): void {
@@ -92,64 +95,41 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     }
   }
 
-  fetchSurah(): void {
+  async fetchMushaf(): Promise<void> {
     this.loading = true;
     this.error = '';
-    this.http.get<ApiResponse<SurahData>>(`https://api.alquran.cloud/v1/surah/${this.surahNumber}`).subscribe({
-      next: (res) => {
+    this.mushafSections = [];
+    this.mushafLoaded = false;
+    try {
+      const listRes = await firstValueFrom(
+        this.http.get<ApiResponse<SurahMeta[]>>(
+          buildUrl('quran/surah-list.json', 'https://api.alquran.cloud/v1/surah')
+        )
+      );
+      this.surahList = listRes?.data ?? [];
+      for (const surah of this.surahList) {
+        const url = buildUrl(
+          `quran/surah-${padSurah(surah.number)}.json`,
+          `https://api.alquran.cloud/v1/surah/${surah.number}`
+        );
+        const res = await firstValueFrom(this.http.get<ApiResponse<SurahData>>(url));
         const data = res?.data;
-        this.surahName = data?.name ?? '';
-        this.ayahs = data?.ayahs ?? [];
-        this.buildPages();
-        this.saveLastRead();
-      },
-      error: () => {
-        this.error = 'تعذر تحميل نص السورة الآن.';
-      },
-      complete: () => {
-        this.loading = false;
-        this.restoreScroll();
-      }
-    });
-  }
-
-  private buildPages(): void {
-    const hasPage = this.ayahs.some((a) => Number.isFinite(a.page || 0) && (a.page || 0) > 0);
-    if (hasPage) {
-      const map = new Map<number, Ayah[]>();
-      for (const ayah of this.ayahs) {
-        const page = ayah.page || 0;
-        if (!map.has(page)) map.set(page, []);
-        map.get(page)!.push(ayah);
-      }
-      this.pages = Array.from(map.entries())
-        .filter(([page]) => page > 0)
-        .sort((a, b) => a[0] - b[0])
-        .map(([page, ayahs]) => ({ page, ayahs, juz: ayahs[0]?.juz }));
-    } else {
-      const chunkSize = 10;
-      const pages: PageBlock[] = [];
-      for (let i = 0; i < this.ayahs.length; i += chunkSize) {
-        pages.push({
-          page: Math.floor(i / chunkSize) + 1,
-          ayahs: this.ayahs.slice(i, i + chunkSize),
-          juz: undefined
+        if (!data) continue;
+        this.mushafSections.push({
+          number: surah.number,
+          name: data.name || surah.name,
+          ayahs: data.ayahs ?? [],
+          juz: data.ayahs?.[0]?.juz
         });
       }
-      this.pages = pages;
+      this.mushafLoaded = true;
+      this.loading = false;
+      this.restoreScroll();
+      setTimeout(() => this.scrollToSurah(this.surahNumber), 0);
+    } catch {
+      this.error = 'تعذر تحميل المصحف الآن.';
+      this.loading = false;
     }
-    this.currentPageIndex = 0;
-  }
-
-  fetchSurahList(): void {
-    this.http.get<ApiResponse<SurahMeta[]>>('https://api.alquran.cloud/v1/surah').subscribe({
-      next: (res) => {
-        this.surahList = res?.data ?? [];
-      },
-      error: () => {
-        this.surahList = [];
-      }
-    });
   }
 
   toggleDrawer(): void {
@@ -163,6 +143,9 @@ export class SurahTextComponent implements OnInit, OnDestroy {
   goToSurah(surah: SurahMeta): void {
     this.drawerOpen = false;
     this.router.navigate(['/quran/text', surah.number]);
+    if (this.mushafLoaded) {
+      setTimeout(() => this.scrollToSurah(surah.number), 0);
+    }
   }
 
   goToAudio(): void {
@@ -174,34 +157,14 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     if (!this.lastRead?.surahNumber) return;
     this.drawerOpen = false;
     this.router.navigate(['/quran/text', this.lastRead.surahNumber]);
+    if (this.mushafLoaded) {
+      setTimeout(() => this.scrollToSurah(this.lastRead!.surahNumber), 0);
+    }
   }
 
-  get currentPage(): PageBlock | null {
-    return this.pages[this.currentPageIndex] || null;
-  }
-
-  get currentJuzLabel(): string {
-    const juz = this.currentPage?.juz;
+  getJuzLabel(juz?: number): string {
     if (!juz || !Number.isFinite(juz)) return '';
     return `الجزء ${this.toArabicOrdinal(juz)}`;
-  }
-
-  goNextPage(): void {
-    if (this.currentPageIndex >= this.pages.length - 1) return;
-    this.currentPageIndex += 1;
-    this.scrollToTop();
-    this.saveScroll();
-  }
-
-  goPrevPage(): void {
-    if (this.currentPageIndex <= 0) return;
-    this.currentPageIndex -= 1;
-    this.scrollToTop();
-    this.saveScroll();
-  }
-
-  private scrollToTop(): void {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   get filteredSurahs(): SurahMeta[] {
@@ -234,15 +197,15 @@ export class SurahTextComponent implements OnInit, OnDestroy {
   private saveScroll(): void {
     try {
       const currentAyah = this.findCurrentAyah();
-      if (currentAyah <= 0) return;
+      if (!currentAyah) return;
       const payload = {
         scrollY: window.scrollY,
-        ayah: currentAyah,
-        pageIndex: this.currentPageIndex,
-        pageNumber: this.pages[this.currentPageIndex]?.page ?? null,
+        ayah: currentAyah.ayah,
+        surahNumber: currentAyah.surahNumber,
         savedAt: new Date().toISOString()
       };
-      localStorage.setItem(`${this.progressKey}_${this.surahNumber}`, JSON.stringify(payload));
+      localStorage.setItem(this.progressKey, JSON.stringify(payload));
+      this.saveLastRead(currentAyah.surahNumber);
     } catch {
       // ignore storage errors
     }
@@ -250,21 +213,15 @@ export class SurahTextComponent implements OnInit, OnDestroy {
 
   private restoreScroll(): void {
     try {
-      const raw = localStorage.getItem(`${this.progressKey}_${this.surahNumber}`);
+      const raw = localStorage.getItem(this.progressKey);
       if (!raw) return;
       const parsed = JSON.parse(raw);
       const ayah = Number(parsed?.ayah ?? 0);
+      const surahNumber = Number(parsed?.surahNumber ?? 0);
       const scrollY = Number(parsed?.scrollY ?? 0);
-      const pageIndex = Number(parsed?.pageIndex ?? -1);
-      if (Number.isFinite(pageIndex) && pageIndex >= 0 && pageIndex < this.pages.length) {
-        this.currentPageIndex = pageIndex;
-      } else if (Number.isFinite(ayah) && ayah > 0) {
-        const foundIndex = this.pages.findIndex((p) => p.ayahs.some((a) => a.numberInSurah === ayah));
-        if (foundIndex >= 0) this.currentPageIndex = foundIndex;
-      }
       const attemptScroll = (triesLeft: number) => {
-        if (Number.isFinite(ayah) && ayah > 0) {
-          const target = document.getElementById(`ayah-${ayah}`);
+        if (Number.isFinite(ayah) && ayah > 0 && Number.isFinite(surahNumber) && surahNumber > 0) {
+          const target = document.getElementById(`ayah-${surahNumber}-${ayah}`);
           if (target) {
             const offset = 110;
             const top = target.getBoundingClientRect().top + window.scrollY - offset;
@@ -286,30 +243,35 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     }
   }
 
-  private findCurrentAyah(): number {
+  private findCurrentAyah(): { surahNumber: number; ayah: number } | null {
     const items = Array.from(document.querySelectorAll<HTMLElement>('.ayah'));
-    if (!items.length) return 0;
+    if (!items.length) return null;
     const offset = 120;
-    let current = 1;
+    let currentAyah = 1;
+    let currentSurah = 1;
     for (const item of items) {
       const top = item.getBoundingClientRect().top;
       if (top - offset <= 0) {
-        const value = Number(item.dataset['ayah'] || '0');
-        if (Number.isFinite(value) && value > 0) {
-          current = value;
+        const ayahValue = Number(item.dataset['ayah'] || '0');
+        const surahValue = Number(item.dataset['surah'] || '0');
+        if (Number.isFinite(ayahValue) && ayahValue > 0) {
+          currentAyah = ayahValue;
+        }
+        if (Number.isFinite(surahValue) && surahValue > 0) {
+          currentSurah = surahValue;
         }
       } else {
         break;
       }
     }
-    return current;
+    return { surahNumber: currentSurah, ayah: currentAyah };
   }
 
   private normalizeArabic(value: string): string {
     return value
       .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
       .replace(/\u0640/g, '')
-      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/[أإآ]/g, 'ا')
       .replace(/ى/g, 'ي')
       .replace(/ؤ/g, 'و')
       .replace(/ئ/g, 'ي')
@@ -370,16 +332,28 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     }
   }
 
-  private saveLastRead(): void {
+  private saveLastRead(surahNumber: number): void {
     try {
       const payload = {
-        surahNumber: this.surahNumber,
-        surahName: this.surahName,
+        surahNumber,
+        surahName: this.getSurahNameByNumber(surahNumber),
         savedAt: new Date().toISOString()
       };
       localStorage.setItem('mushafy_last_quran_surah', JSON.stringify(payload));
     } catch {
       // ignore storage errors
     }
+  }
+
+  private scrollToSurah(number: number): void {
+    const target = document.getElementById(`surah-${number}`);
+    if (!target) return;
+    const offset = 100;
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
+  }
+
+  private getSurahNameByNumber(number: number): string {
+    return this.mushafSections.find((s) => s.number === number)?.name || '';
   }
 }

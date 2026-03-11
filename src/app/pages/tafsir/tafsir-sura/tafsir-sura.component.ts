@@ -1,6 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { buildUrl, padSurah } from '../../../shared/offline';
 
 type ApiResponse<T> = {
   data?: T;
@@ -77,7 +78,10 @@ export class TafsirSuraComponent implements OnInit, OnDestroy {
   }
 
   fetchEditionsAndLoad(): void {
-    const url = 'https://api.alquran.cloud/v1/edition?format=text&type=tafsir&language=ar';
+    const url = buildUrl(
+      'tafsir/editions.json',
+      'https://api.alquran.cloud/v1/edition?format=text&type=tafsir&language=ar'
+    );
     this.http.get<ApiResponse<TafsirEdition[]>>(url).subscribe({
       next: (res: any) => {
         const list: TafsirEdition[] = res?.data ?? [];
@@ -109,7 +113,10 @@ export class TafsirSuraComponent implements OnInit, OnDestroy {
     }
     this.loading = true;
     this.error = '';
-    const url = `https://api.alquran.cloud/v1/surah/${this.surahNumber}/${this.tafsirKey}`;
+    const url = buildUrl(
+      `tafsir/${this.tafsirKey}/surah-${padSurah(this.surahNumber)}.json`,
+      `https://api.alquran.cloud/v1/surah/${this.surahNumber}/${this.tafsirKey}`
+    );
     this.http.get<ApiResponse<any>>(url).subscribe({
       next: (res) => {
         this.ayahs = res?.data?.ayahs ?? [];
@@ -140,7 +147,9 @@ export class TafsirSuraComponent implements OnInit, OnDestroy {
   }
 
   fetchSurahList(): void {
-    this.http.get<ApiResponse<SurahMeta[]>>('https://api.alquran.cloud/v1/surah').subscribe({
+    this.http.get<ApiResponse<SurahMeta[]>>(
+      buildUrl('quran/surah-list.json', 'https://api.alquran.cloud/v1/surah')
+    ).subscribe({
       next: (res) => {
         this.surahList = res?.data ?? [];
       },

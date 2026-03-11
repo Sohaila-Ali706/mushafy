@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { OFFLINE_BASE, OFFLINE_MODE } from '../../shared/offline';
 
 type TimingsResponse = {
   data: {
@@ -120,7 +121,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.restoreCachedVerse();
     this.restoreCachedTimings();
-    this.useGeolocation();
+    if (OFFLINE_MODE) {
+      if (!this.hasCachedTimingsForToday()) {
+        this.loadOfflineTimings();
+      }
+    } else {
+      this.useGeolocation();
+    }
     this.loadDailyVerse();
   }
 
@@ -335,6 +342,28 @@ export class HomeComponent implements OnInit, OnDestroy {
       // ignore cache errors
     }
 
+    if (OFFLINE_MODE) {
+      this.http.get<any>(`${OFFLINE_BASE}/verses.json`).subscribe({
+        next: (res) => {
+          const list = Array.isArray(res) ? res : res?.data ?? [];
+          if (!list.length) return;
+          const pick = this.pickDailyVerse(list);
+          this.verse = { text: pick.text, source: pick.source };
+          const payload: VerseCache = {
+            savedAt: today,
+            text: pick.text,
+            source: pick.source
+          };
+          try {
+            localStorage.setItem(this.verseCacheKey, JSON.stringify(payload));
+          } catch {
+            // ignore cache errors
+          }
+        }
+      });
+      return;
+    }
+
     const randomAyah = Math.floor(Math.random() * 6236) + 1;
     this.http.get<AyahResponse>(`https://api.alquran.cloud/v1/ayah/${randomAyah}`).subscribe({
       next: (res) => {
@@ -356,6 +385,36 @@ export class HomeComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  private hasCachedTimingsForToday(): boolean {
+    try {
+      const raw = localStorage.getItem(this.cacheKey);
+      if (!raw) return false;
+      const parsed: TimingsCache = JSON.parse(raw);
+      return parsed?.timings && parsed.savedAt === new Date().toDateString();
+    } catch {
+      return false;
+    }
+  }
+
+  private loadOfflineTimings(): void {
+    this.loadingTimings = true;
+    this.timingError = '';
+    this.http.get<TimingsResponse>(`${OFFLINE_BASE}/prayer-times.json`).subscribe({
+      next: (res) => this.updateFromResponse(res),
+      error: () => {
+        this.timingError = 'لا توجد بيانات مواقيت محفوظة للأوفلاين.';
+      },
+      complete: () => {
+        this.loadingTimings = false;
+      }
+    });
+  }
+
+  private pickDailyVerse(list: { text: string; source: string }[]): { text: string; source: string } {
+    const seed = new Date().toDateString().split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return list[seed % list.length];
   }
 
   async shareVerse(): Promise<void> {

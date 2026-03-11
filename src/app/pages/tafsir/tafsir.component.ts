@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { buildUrl } from '../../shared/offline';
 
 type ApiResponse<T> = {
   data?: T;
@@ -55,7 +56,9 @@ export class TafsirComponent implements OnInit {
   }
 
   fetchSurahs(): void {
-    this.http.get<ApiResponse<Surah[]>>('https://api.alquran.cloud/v1/surah').subscribe({
+    this.http.get<ApiResponse<Surah[]>>(
+      buildUrl('quran/surah-list.json', 'https://api.alquran.cloud/v1/surah')
+    ).subscribe({
       next: (res) => {
         this.surahs = res?.data ?? [];
       },
@@ -70,7 +73,10 @@ export class TafsirComponent implements OnInit {
   }
 
   fetchTranslations(): void {
-    const url = 'https://api.alquran.cloud/v1/edition?format=text&type=tafsir&language=ar';
+    const url = buildUrl(
+      'tafsir/editions.json',
+      'https://api.alquran.cloud/v1/edition?format=text&type=tafsir&language=ar'
+    );
     this.http.get<ApiResponse<TafsirEdition[]>>(url).subscribe({
       next: (res: any) => {
         const list: TafsirEdition[] = res?.data ?? [];
