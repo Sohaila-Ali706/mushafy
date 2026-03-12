@@ -150,7 +150,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.showCityForm = false;
-    this.fetchByCity(this.city, this.country, true);
+    this.fetchByCity(this.city, this.country);
   }
 
   useCurrentLocation(): void {
