@@ -55,7 +55,12 @@ export class SurahTextComponent implements OnInit, OnDestroy {
   lastRead: LastRead | null = null;
   loading = true;
   error = '';
+  loadingMore = false;
+  allLoaded = false;
   private readonly progressKey = 'mushafy_mushaf_progress';
+  private readonly batchSize = 5;
+  private readonly quranCacheName = 'mushafy-quran-json-v1';
+  private loadedCount = 0;
   private scrollTimer: number | undefined;
   private navSub: any;
   private paramSub: any;
@@ -73,7 +78,9 @@ export class SurahTextComponent implements OnInit, OnDestroy {
       const param = params.get('surahNumber');
       this.surahNumber = Number(param || 1);
       if (this.mushafLoaded) {
-        setTimeout(() => this.scrollToSurah(this.surahNumber), 0);
+        this.ensureSurahLoaded(this.surahNumber).then(() => {
+          setTimeout(() => this.scrollToSurah(this.surahNumber), 0);
+        });
       }
     });
     this.loadLastRead();
@@ -100,32 +107,28 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     this.error = '';
     this.mushafSections = [];
     this.mushafLoaded = false;
+    this.loadingMore = false;
+    this.allLoaded = false;
+    this.loadedCount = 0;
     try {
-      const listRes = await firstValueFrom(
-        this.http.get<ApiResponse<SurahMeta[]>>(
-          buildUrl('quran/surah-list.json', 'https://api.alquran.cloud/v1/surah')
-        )
+      const listRes = await this.fetchJson<ApiResponse<SurahMeta[]>>(
+        'https://mushafy.local/quran/surah-list',
+        buildUrl('quran/surah-list.json', 'https://api.alquran.cloud/v1/surah')
       );
       this.surahList = listRes?.data ?? [];
-      for (const surah of this.surahList) {
-        const url = buildUrl(
-          `quran/surah-${padSurah(surah.number)}.json`,
-          `https://api.alquran.cloud/v1/surah/${surah.number}`
-        );
-        const res = await firstValueFrom(this.http.get<ApiResponse<SurahData>>(url));
-        const data = res?.data;
-        if (!data) continue;
-        this.mushafSections.push({
-          number: surah.number,
-          name: data.name || surah.name,
-          ayahs: data.ayahs ?? [],
-          juz: data.ayahs?.[0]?.juz
-        });
-      }
+      const progressSurah = this.getProgressSurah();
+      const initialTarget = Math.max(this.batchSize, this.surahNumber);
+      await this.loadUntil(initialTarget);
       this.mushafLoaded = true;
       this.loading = false;
-      this.restoreScroll();
       setTimeout(() => this.scrollToSurah(this.surahNumber), 0);
+      if (progressSurah <= this.loadedCount) {
+        this.restoreScroll();
+      } else {
+        this.loadUntil(progressSurah).then(() => {
+          this.restoreScroll();
+        });
+      }
     } catch {
       this.error = 'تعذر تحميل المصحف الآن.';
       this.loading = false;
@@ -140,10 +143,11 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     this.drawerOpen = false;
   }
 
-  goToSurah(surah: SurahMeta): void {
+  async goToSurah(surah: SurahMeta): Promise<void> {
     this.drawerOpen = false;
     this.router.navigate(['/quran/text', surah.number]);
     if (this.mushafLoaded) {
+      await this.ensureSurahLoaded(surah.number);
       setTimeout(() => this.scrollToSurah(surah.number), 0);
     }
   }
@@ -153,11 +157,12 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     this.router.navigate(['/quran/audio', this.surahNumber]);
   }
 
-  resumeLastRead(): void {
+  async resumeLastRead(): Promise<void> {
     if (!this.lastRead?.surahNumber) return;
     this.drawerOpen = false;
     this.router.navigate(['/quran/text', this.lastRead.surahNumber]);
     if (this.mushafLoaded) {
+      await this.ensureSurahLoaded(this.lastRead.surahNumber);
       setTimeout(() => this.scrollToSurah(this.lastRead!.surahNumber), 0);
     }
   }
@@ -186,6 +191,7 @@ export class SurahTextComponent implements OnInit, OnDestroy {
   @HostListener('window:scroll')
   onScroll(): void {
     if (this.loading) return;
+    this.maybeLoadMore();
     if (this.scrollTimer) {
       window.clearTimeout(this.scrollTimer);
     }
@@ -355,5 +361,112 @@ export class SurahTextComponent implements OnInit, OnDestroy {
 
   private getSurahNameByNumber(number: number): string {
     return this.mushafSections.find((s) => s.number === number)?.name || '';
+  }
+
+  private async loadUntil(target: number): Promise<void> {
+    const limit = Math.min(target, this.surahList.length);
+    while (this.loadedCount < limit && !this.error) {
+      await this.loadNextBatch();
+    }
+  }
+
+  async loadNextBatch(): Promise<void> {
+    if (this.loadingMore || this.allLoaded) return;
+    const showLoading = !this.loading;
+    if (showLoading) this.loadingMore = true;
+    const start = this.loadedCount;
+    const batch = this.surahList.slice(start, start + this.batchSize);
+    if (!batch.length) {
+      this.allLoaded = true;
+      this.loadingMore = false;
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        batch.map(async (surah) => {
+          const url = buildUrl(
+            `quran/surah-${padSurah(surah.number)}.json`,
+            `https://api.alquran.cloud/v1/surah/${surah.number}`
+          );
+          try {
+            const res = await this.fetchJson<ApiResponse<SurahData>>(
+              `https://mushafy.local/quran/surah-${padSurah(surah.number)}`,
+              url
+            );
+            return { surah, data: res?.data };
+          } catch {
+            return { surah, data: null };
+          }
+        })
+      );
+
+      for (const result of results) {
+        const data = result.data;
+        if (!data) continue;
+        this.mushafSections.push({
+          number: result.surah.number,
+          name: data.name || result.surah.name,
+          ayahs: data.ayahs ?? [],
+          juz: data.ayahs?.[0]?.juz
+        });
+      }
+
+      this.loadedCount += batch.length;
+      if (this.loadedCount >= this.surahList.length) {
+        this.allLoaded = true;
+      }
+    } catch {
+      if (!this.error) {
+        this.error = 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ط¨ط¹ط¶ ط³ظˆط± ط§ظ„ظ…طµط­ظپ.';
+      }
+    } finally {
+      this.loadingMore = false;
+    }
+  }
+
+  private maybeLoadMore(): void {
+    if (this.loadingMore || this.allLoaded || this.loading) return;
+    const threshold = 900;
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - threshold) {
+      this.loadNextBatch();
+    }
+  }
+
+  private async ensureSurahLoaded(number: number): Promise<void> {
+    if (!this.surahList.length) return;
+    if (number <= this.loadedCount) return;
+    await this.loadUntil(number);
+  }
+
+  private getProgressSurah(): number {
+    try {
+      const raw = localStorage.getItem(this.progressKey);
+      if (!raw) return 1;
+      const parsed = JSON.parse(raw);
+      const surahNumber = Number(parsed?.surahNumber ?? 0);
+      return Number.isFinite(surahNumber) && surahNumber > 0 ? surahNumber : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  private async fetchJson<T>(cacheKey: string, url: string): Promise<T> {
+    if (!('caches' in window)) {
+      return await firstValueFrom(this.http.get<T>(url));
+    }
+    const cache = await caches.open(this.quranCacheName);
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      return (await cached.json()) as T;
+    }
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`fetch failed: ${url}`);
+    }
+    const data = (await res.json()) as T;
+    const headers = new Headers({ 'Content-Type': 'application/json' });
+    await cache.put(cacheKey, new Response(JSON.stringify(data), { headers }));
+    return data;
   }
 }

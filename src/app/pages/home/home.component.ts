@@ -30,6 +30,8 @@ type TimingsCache = {
   timings: Timings;
   locationLabel?: string;
   hijriLabel?: string;
+  dayKey?: string;
+  locationKey?: string;
 };
 
 type AyahResponse = {
@@ -115,17 +117,18 @@ export class HomeComponent implements OnInit, OnDestroy {
   private countdownTimer: number | undefined;
   private readonly cacheKey = 'mushafy_prayer_timings_v1';
   private readonly verseCacheKey = 'mushafy_daily_verse_v1';
+  private readonly cacheHours = 12;
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
     this.restoreCachedVerse();
-    this.restoreCachedTimings();
+    const hasFreshTimings = this.restoreCachedTimings();
     if (OFFLINE_MODE) {
-      if (!this.hasCachedTimingsForToday()) {
+      if (!hasFreshTimings) {
         this.loadOfflineTimings();
       }
-    } else {
+    } else if (!hasFreshTimings) {
       this.useGeolocation();
     }
     this.loadDailyVerse();
@@ -147,7 +150,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.showCityForm = false;
-    this.fetchByCity(this.city, this.country);
+    this.fetchByCity(this.city, this.country, true);
   }
 
   useCurrentLocation(): void {
@@ -461,12 +464,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private restoreCachedTimings(): void {
+  private restoreCachedTimings(): boolean {
     try {
       const raw = localStorage.getItem(this.cacheKey);
-      if (!raw) return;
+      if (!raw) return false;
       const parsed: TimingsCache = JSON.parse(raw);
-      if (!parsed?.timings || parsed.savedAt !== new Date().toDateString()) return;
+      if (!parsed?.timings || parsed.savedAt !== new Date().toDateString()) return false;
       if (parsed.locationLabel) this.locationLabel = parsed.locationLabel;
       if (parsed.hijriLabel) this.hijriLabel = parsed.hijriLabel;
       this.prayers = [
@@ -511,8 +514,10 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.updateCountdown();
       this.startCountdownTimer();
       this.loadingTimings = false;
+      return true;
     } catch {
       // ignore caching errors
+      return false;
     }
   }
 }

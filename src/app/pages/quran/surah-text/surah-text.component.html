@@ -39,6 +39,14 @@
       </div>
     </section>
   </ng-container>
+
+  <div *ngIf="loadingMore" class="status">جارٍ تحميل المزيد...</div>
+  <button class="load-more"
+          *ngIf="!loading && !error && !allLoaded"
+          type="button"
+          (click)="loadNextBatch()">
+    تحميل المزيد
+  </button>
 </main>
 
 <div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>

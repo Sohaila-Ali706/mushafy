@@ -1,30 +1,30 @@
-﻿<main class="surah-audio-page">
+<main class="surah-audio-page">
   <header class="surah-header">
     <div>
-      <h1>ط§ظ„ط§ط³طھظ…ط§ط¹ ط¥ظ„ظ‰ {{currentSurahName}}</h1>
-      <p>ظٹظ…ظƒظ†ظƒ طھط؛ظٹظٹط± ط±ظ‚ظ… ط§ظ„ظ…ظڈظ‚ط±ط¦ ط¥ط°ط§ ظ„ط²ظ… ط§ظ„ط£ظ…ط±.</p>
+      <h1>الاستماع إلى {{currentSurahName}}</h1>
+      <p>يمكنك تغيير رقم المقرئ إذا لزم الأمر.</p>
     </div>
     <div class="surah-actions">
       <button class="menu-btn" type="button" (click)="toggleDrawer()">
         <span class="material-symbols-outlined">menu</span>
-        ط§ظ„ط³ظˆط±
+        السور
       </button>
-      <button class="back-btn" routerLink="/">ط§ظ„ط¹ظˆط¯ط© ظ„ظ„ط±ط¦ظٹط³ظٹط©</button>
+      <button class="back-btn" routerLink="/">العودة للرئيسية</button>
     </div>
   </header>
 
   <div class="reciter-box">
-    <label for="reciterId">ط§ط³ظ… ط§ظ„ظ…ظڈظ‚ط±ط¦</label>
+    <label for="reciterId">اسم المقرئ</label>
     <div class="reciter-input">
       <select id="reciterId" [value]="reciterId" (change)="updateReciter($any($event.target).value)">
         <option *ngFor="let reciter of reciters" [value]="reciter.id">{{reciter.name}}</option>
       </select>
-      <button (click)="loadAudio()">طھط­ط¯ظٹط«</button>
+      <button (click)="loadAudio()">تحديث</button>
     </div>
-    <div class="reciter-current">ط§ظ„ظ…ظڈظ‚ط±ط¦ ط§ظ„ط­ط§ظ„ظٹ: {{currentReciterName}}</div>
+    <div class="reciter-current">المقرئ الحالي: {{currentReciterName}}</div>
   </div>
 
-  <div *ngIf="loading" class="status">ط¬ط§ط±ظچ طھط­ظ…ظٹظ„ ط§ظ„طµظˆطھ...</div>
+  <div *ngIf="loading" class="status">جارٍ تحميل الصوت...</div>
   <div *ngIf="error" class="status error">{{error}}</div>
 
   <div class="audio-card" *ngIf="!loading && !error && audioSource">
@@ -40,7 +40,7 @@
         <span class="download-text" *ngIf="!downloaded && !downloading">{{downloadLabel}}</span>
       </button>
     </div>
-    <a class="audio-link" [href]="audioSource" target="_blank" rel="noreferrer">ظپطھط­ ط§ظ„طµظˆطھ ظپظٹ طھط¨ظˆظٹط¨ ط¬ط¯ظٹط¯</a>
+    <a class="audio-link" [href]="audioSource" target="_blank" rel="noreferrer">فتح الصوت في تبويب جديد</a>
   </div>
 </main>
 
@@ -48,24 +48,24 @@
 <aside class="surah-drawer" [class.open]="drawerOpen">
   <div class="drawer-header">
     <div>
-      <h3>ط§ظ„ط³ظˆط±</h3>
-      <p>ط§ط®طھط§ط±ظٹ ط³ظˆط±ط© ط£ط®ط±ظ‰</p>
+      <h3>السور</h3>
+      <p>اختاري سورة أخرى</p>
     </div>
     <button class="drawer-close" type="button" (click)="closeDrawer()">
       <span class="material-symbols-outlined">close</span>
     </button>
   </div>
   <div class="drawer-tabs">
-    <button class="tab-btn" type="button" (click)="goToText()">ظ†طµ ط§ظ„ظ‚ط±ط§ط،ط©</button>
-    <button class="tab-btn active" type="button">ط§ظ„طµظˆطھ</button>
+    <button class="tab-btn" type="button" (click)="goToText()">نص القراءة</button>
+    <button class="tab-btn active" type="button">الصوت</button>
   </div>
   <button class="drawer-resume" *ngIf="lastRead" type="button" (click)="resumeLastRead()">
-    ظƒظ…ظ„ ظ…ظ† ط¢ط®ط± ظ‚ط±ط§ط،ط©
+    كمل من آخر قراءة
     <span class="resume-sub" *ngIf="lastRead.surahName">({{lastRead.surahName}})</span>
-    <span class="resume-sub" *ngIf="!lastRead.surahName">ط³ظˆط±ط© ط±ظ‚ظ… {{lastRead.surahNumber}}</span>
+    <span class="resume-sub" *ngIf="!lastRead.surahName">سورة رقم {{lastRead.surahNumber}}</span>
   </button>
   <div class="drawer-search">
-    <input type="text" [(ngModel)]="searchTerm" placeholder="ط¨ط­ط« ط¹ظ† ط³ظˆط±ط©" />
+    <input type="text" [(ngModel)]="searchTerm" placeholder="بحث عن سورة" />
   </div>
   <div class="drawer-list">
     <button class="drawer-item"
@@ -78,4 +78,3 @@
     </button>
   </div>
 </aside>
-
