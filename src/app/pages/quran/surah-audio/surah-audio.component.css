@@ -129,6 +129,33 @@
   width: 100%;
 }
 
+.audio-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.download-btn {
+  border: 1px dashed var(--border-color);
+  background: var(--surface-muted);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.download-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .audio-link {
   color: var(--text);
   font-size: 14px;

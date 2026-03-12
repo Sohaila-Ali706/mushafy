@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { AUDIO_BASE, OFFLINE_BASE, OFFLINE_MODE, buildUrl, padSurah } from '../../../shared/offline';
+import { Capacitor } from '@capacitor/core';
+import { OFFLINE_BASE, OFFLINE_MODE, buildUrl, padSurah } from '../../../shared/offline';
 
 type SurahMeta = {
   number: number;
@@ -31,21 +32,30 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
   reciterId = 7;
   reciters: Reciter[] = [];
   private readonly fallbackReciters: Reciter[] = [
-    { id: 1, name: 'الشيخ 1' },
-    { id: 2, name: 'الشيخ 2' },
-    { id: 3, name: 'الشيخ 3' },
-    { id: 4, name: 'الشيخ 4' },
-    { id: 5, name: 'الشيخ 5' },
-    { id: 6, name: 'الشيخ 6' },
-    { id: 7, name: 'الشيخ 7' }
+    { id: 1, name: 'ط§ظ„ط´ظٹط® 1' },
+    { id: 2, name: 'ط§ظ„ط´ظٹط® 2' },
+    { id: 3, name: 'ط§ظ„ط´ظٹط® 3' },
+    { id: 4, name: 'ط§ظ„ط´ظٹط® 4' },
+    { id: 5, name: 'ط§ظ„ط´ظٹط® 5' },
+    { id: 6, name: 'ط§ظ„ط´ظٹط® 6' },
+    { id: 7, name: 'ط§ظ„ط´ظٹط® 7' }
   ];
   audioUrl = '';
+  audioBlobUrl = '';
   surahList: SurahMeta[] = [];
   searchTerm = '';
   drawerOpen = false;
   lastRead: LastRead | null = null;
   loading = true;
   error = '';
+  downloading = false;
+  downloaded = false;
+  readonly isNativeApp = Capacitor.isNativePlatform();
+  private readonly audioCacheName = 'mushafy-audio-v1';
+  readonly downloadLabel =
+    '\u062a\u062d\u0645\u064a\u0644 \u0644\u0644\u0627\u0633\u062a\u0645\u0627\u0639 \u0628\u062f\u0648\u0646 \u0625\u0646\u062a\u0631\u0646\u062a';
+  readonly downloadingLabel = '\u062c\u0627\u0631\u064d \u0627\u0644\u062a\u0646\u0632\u064a\u0644...';
+  readonly downloadedLabel = '\u062a\u0645 \u0627\u0644\u062a\u062d\u0645\u064a\u0644';
   private paramSub: any;
 
   constructor(private route: ActivatedRoute, private router: Router, private http: HttpClient) {}
@@ -65,6 +75,7 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
     if (this.paramSub) {
       this.paramSub.unsubscribe();
     }
+    this.revokeBlobUrl();
   }
 
   updateReciter(value: string): void {
@@ -129,19 +140,23 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
 
   get currentSurahName(): string {
     const found = this.surahList.find((s) => s.number === this.surahNumber);
-    return found?.name || `سورة رقم ${this.surahNumber}`;
+    return found?.name || `ط³ظˆط±ط© ط±ظ‚ظ… ${this.surahNumber}`;
   }
 
   get currentReciterName(): string {
-    return this.reciters.find((r) => r.id === this.reciterId)?.name || `الشيخ ${this.reciterId}`;
+    return this.reciters.find((r) => r.id === this.reciterId)?.name || `ط§ظ„ط´ظٹط® ${this.reciterId}`;
   }
 
-  loadAudio(): void {
+  async loadAudio(): Promise<void> {
     this.loading = true;
     this.error = '';
     this.audioUrl = '';
-    if (OFFLINE_MODE) {
-      this.audioUrl = `${AUDIO_BASE}/${this.reciterId}/${padSurah(this.surahNumber)}.mp3`;
+    this.downloading = false;
+    this.downloaded = false;
+    this.revokeBlobUrl();
+
+    const cached = await this.loadCachedAudio();
+    if (cached) {
       this.loading = false;
       return;
     }
@@ -156,16 +171,79 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
           res?.data;
         this.audioUrl = audio?.audio_url || audio?.url || audio?.file || '';
         if (!this.audioUrl) {
-          this.error = 'لم يتم العثور على ملف الصوت لهذه السورة.';
+          this.error =
+            '\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0645\u0644\u0641 \u0627\u0644\u0635\u0648\u062a \u0644\u0647\u0630\u0647 \u0627\u0644\u0633\u0648\u0631\u0629.';
         }
+        this.loading = false;
       },
       error: () => {
-        this.error = 'تعذر تحميل الصوت الآن.';
-      },
-      complete: () => {
+        this.error =
+          '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0635\u0648\u062a \u0627\u0644\u0622\u0646. \u062a\u0623\u0643\u062f\u064a \u0645\u0646 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0628\u0627\u0644\u0625\u0646\u062a\u0631\u0646\u062a \u0623\u0648 \u062d\u0645\u0651\u0644\u064a\u0647 \u0623\u0648\u0644\u064b\u0627.';
         this.loading = false;
       }
     });
+  }
+
+  get audioSource(): string {
+    return this.audioBlobUrl || this.audioUrl;
+  }
+
+  async downloadAudio(): Promise<void> {
+    if (!this.isNativeApp || !this.audioUrl || this.downloading || this.downloaded) return;
+    if (!('caches' in window)) {
+      this.error =
+        '\u0627\u0644\u062a\u062e\u0632\u064a\u0646 \u0627\u0644\u0645\u062d\u0644\u064a \u063a\u064a\u0631 \u0645\u062a\u0627\u062d \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632.';
+      return;
+    }
+    this.downloading = true;
+    this.error = '';
+    try {
+      const response = await fetch(this.audioUrl);
+      if (!response.ok) throw new Error('download-failed');
+      const blob = await response.blob();
+      const cache = await caches.open(this.audioCacheName);
+      const headers = new Headers({
+        'Content-Type': response.headers.get('content-type') || 'audio/mpeg'
+      });
+      await cache.put(this.getCacheKey(), new Response(blob, { headers }));
+      this.setBlobUrl(blob);
+      this.downloaded = true;
+    } catch {
+      this.error = '\u062a\u0639\u0630\u0631 \u062a\u0646\u0632\u064a\u0644 \u0627\u0644\u0635\u0648\u062a \u0627\u0644\u0622\u0646.';
+    } finally {
+      this.downloading = false;
+    }
+  }
+
+  private async loadCachedAudio(): Promise<boolean> {
+    if (!this.isNativeApp || !('caches' in window)) return false;
+    try {
+      const cache = await caches.open(this.audioCacheName);
+      const match = await cache.match(this.getCacheKey());
+      if (!match) return false;
+      const blob = await match.blob();
+      this.setBlobUrl(blob);
+      this.downloaded = true;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private getCacheKey(): string {
+    return `https://mushafy.local/audio/${this.reciterId}/${padSurah(this.surahNumber)}`;
+  }
+
+  private setBlobUrl(blob: Blob): void {
+    this.revokeBlobUrl();
+    this.audioBlobUrl = URL.createObjectURL(blob);
+  }
+
+  private revokeBlobUrl(): void {
+    if (this.audioBlobUrl) {
+      URL.revokeObjectURL(this.audioBlobUrl);
+      this.audioBlobUrl = '';
+    }
   }
 
   fetchReciters(): void {
@@ -263,11 +341,11 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
     return value
       .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
       .replace(/\u0640/g, '')
-      .replace(/[أإآٱ]/g, 'ا')
-      .replace(/ى/g, 'ي')
-      .replace(/ؤ/g, 'و')
-      .replace(/ئ/g, 'ي')
-      .replace(/ة/g, 'ه')
+      .replace(/[ط£ط¥ط¢ظ±]/g, 'ط§')
+      .replace(/ظ‰/g, 'ظٹ')
+      .replace(/ط¤/g, 'ظˆ')
+      .replace(/ط¦/g, 'ظٹ')
+      .replace(/ط©/g, 'ظ‡')
       .trim()
       .toLowerCase();
   }
@@ -288,3 +366,4 @@ export class SurahAudioComponent implements OnInit, OnDestroy {
     }
   }
 }
+
