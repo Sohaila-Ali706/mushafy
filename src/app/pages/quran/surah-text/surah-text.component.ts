@@ -2,7 +2,7 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { buildUrl, padSurah } from '../../../shared/offline';
+import { OFFLINE_BASE, padSurah } from '../../../shared/offline';
 
 type ApiResponse<T> = {
   data: T;
@@ -113,7 +113,8 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     try {
       const listRes = await this.fetchJson<ApiResponse<SurahMeta[]>>(
         'https://mushafy.local/quran/surah-list',
-        buildUrl('quran/surah-list.json', 'https://api.alquran.cloud/v1/surah')
+        `${OFFLINE_BASE}/quran/surah-list.json`,
+        'https://api.alquran.cloud/v1/surah'
       );
       this.surahList = listRes?.data ?? [];
       const progressSurah = this.getProgressSurah();
@@ -385,14 +386,11 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     try {
       const results = await Promise.all(
         batch.map(async (surah) => {
-          const url = buildUrl(
-            `quran/surah-${padSurah(surah.number)}.json`,
-            `https://api.alquran.cloud/v1/surah/${surah.number}`
-          );
           try {
             const res = await this.fetchJson<ApiResponse<SurahData>>(
               `https://mushafy.local/quran/surah-${padSurah(surah.number)}`,
-              url
+              `${OFFLINE_BASE}/quran/surah-${padSurah(surah.number)}.json`,
+              `https://api.alquran.cloud/v1/surah/${surah.number}`
             );
             return { surah, data: res?.data };
           } catch {
@@ -451,22 +449,36 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async fetchJson<T>(cacheKey: string, url: string): Promise<T> {
+  private async fetchJson<T>(cacheKey: string, offlineUrl: string, onlineUrl: string): Promise<T> {
     if (!('caches' in window)) {
-      return await firstValueFrom(this.http.get<T>(url));
+      try {
+        return await firstValueFrom(this.http.get<T>(offlineUrl));
+      } catch {
+        return await firstValueFrom(this.http.get<T>(onlineUrl));
+      }
     }
     const cache = await caches.open(this.quranCacheName);
     const cached = await cache.match(cacheKey);
     if (cached) {
       return (await cached.json()) as T;
     }
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`fetch failed: ${url}`);
+    const urls = [offlineUrl, onlineUrl].filter(Boolean);
+    let lastError: unknown = null;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          lastError = new Error(`fetch failed: ${url}`);
+          continue;
+        }
+        const data = (await res.json()) as T;
+        const headers = new Headers({ 'Content-Type': 'application/json' });
+        await cache.put(cacheKey, new Response(JSON.stringify(data), { headers }));
+        return data;
+      } catch (err) {
+        lastError = err;
+      }
     }
-    const data = (await res.json()) as T;
-    const headers = new Headers({ 'Content-Type': 'application/json' });
-    await cache.put(cacheKey, new Response(JSON.stringify(data), { headers }));
-    return data;
+    throw lastError ?? new Error('fetch failed');
   }
 }

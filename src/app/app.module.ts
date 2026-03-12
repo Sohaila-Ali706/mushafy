@@ -15,7 +15,8 @@ import { AdhkarComponent } from './pages/adhkar/adhkar.component';
 import { TasbihComponent } from './pages/tasbih/tasbih.component';
 import { NavbarComponent } from './shared/navbar/navbar.component';
 import { FooterComponent } from './shared/footer/footer.component';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { JsonCacheInterceptor } from './shared/json-cache.interceptor';
 
 @NgModule({
   declarations: [
@@ -38,7 +39,9 @@ import { HttpClientModule } from '@angular/common/http';
     HttpClientModule,
     AppRoutingModule
   ],
-  providers: [],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: JsonCacheInterceptor, multi: true }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

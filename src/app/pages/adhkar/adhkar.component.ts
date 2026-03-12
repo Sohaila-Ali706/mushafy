@@ -1,5 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { OFFLINE_BASE, OFFLINE_MODE, buildUrl } from '../../shared/offline';
 
 type AdhkarCategory = {
@@ -28,6 +29,7 @@ export class AdhkarComponent implements OnInit {
   loading = false;
   error = '';
   listError = '';
+  private readonly cacheName = 'mushafy-api-cache-v1';
 
   constructor(private http: HttpClient) {}
 
@@ -298,6 +300,25 @@ export class AdhkarComponent implements OnInit {
     }
 
     return [];
+  }
+
+  private async fetchJson<T>(url: string): Promise<T> {
+    if (!('caches' in window)) {
+      return await firstValueFrom(this.http.get<T>(url));
+    }
+    const cache = await caches.open(this.cacheName);
+    const cached = await cache.match(url);
+    if (cached) {
+      return (await cached.json()) as T;
+    }
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`fetch failed: ${url}`);
+    }
+    const data = (await res.json()) as T;
+    const headers = new Headers({ 'Content-Type': 'application/json' });
+    await cache.put(url, new Response(JSON.stringify(data), { headers }));
+    return data;
   }
 
   toProxyUrl(url: string): string {
