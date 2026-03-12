@@ -15,5 +15,14 @@
 </head>
 <body>
   <app-root></app-root>
+  <script>
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        document.documentElement.classList.add('icons-loaded');
+      });
+    } else {
+      document.documentElement.classList.add('icons-loaded');
+    }
+  </script>
 </body>
 </html>
