@@ -166,7 +166,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     if (!force && this.loadingTimings) return;
 
-    this.loadingTimings = true;
+    this.loadingTimings = !this.hasCachedTimings();
     this.timingError = '';
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -180,12 +180,18 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private fetchByCity(city: string, country: string): void {
-    this.loadingTimings = true;
+    this.loadingTimings = !this.hasCachedTimings();
     this.timingError = '';
     this.locationLabel = `${city}، ${country}`;
+    const tzParam = this.isEgyptLocation()
+      ? `&timezonestring=${encodeURIComponent('Africa/Cairo')}`
+      : '';
+    const dateParam = this.isEgyptLocation()
+      ? `&date=${this.getEgyptDateParam()}`
+      : '';
     const url = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(
       city
-    )}&country=${encodeURIComponent(country)}&method=${this.method}`;
+    )}&country=${encodeURIComponent(country)}&method=${this.method}${tzParam}${dateParam}`;
     this.http.get<TimingsResponse>(url).subscribe({
       next: (res) => this.updateFromResponse(res),
       error: () => {
@@ -198,10 +204,16 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private fetchByCoords(lat: number, lng: number): void {
-    this.loadingTimings = true;
+    this.loadingTimings = !this.hasCachedTimings();
     this.timingError = '';
     this.locationLabel = 'الموقع الحالي';
-    const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=${this.method}`;
+    const tzParam = this.isEgyptLocation()
+      ? `&timezonestring=${encodeURIComponent('Africa/Cairo')}`
+      : '';
+    const dateParam = this.isEgyptLocation()
+      ? `&date=${this.getEgyptDateParam()}`
+      : '';
+    const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=${this.method}${tzParam}${dateParam}`;
     this.http.get<TimingsResponse>(url).subscribe({
       next: (res) => this.updateFromResponse(res),
       error: () => {
@@ -217,13 +229,15 @@ export class HomeComponent implements OnInit, OnDestroy {
     const timings = res?.data?.timings;
     if (!timings) return;
     const hijri = res?.data?.date?.hijri;
-    if (hijri?.day && hijri?.month?.ar && hijri?.year) {
+    const hijriText =
+      hijri?.day && hijri?.month?.ar && hijri?.year
+        ? `${hijri.day} ${hijri.month.ar} ${hijri.year}`
+        : res?.data?.date?.readable || '';
+    if (this.isEgyptLocation()) {
       const gregorian = this.getEgyptGregorianLabel();
-      this.hijriLabel = `${hijri.day} ${hijri.month.ar} ${hijri.year}${gregorian ? ' - ' + gregorian : ''}`;
-    } else if (res?.data?.date?.readable) {
-      this.hijriLabel = `${res.data.date.readable} - ${this.getEgyptGregorianLabel()}`;
+      this.hijriLabel = hijriText ? `${hijriText} - ${gregorian}` : gregorian;
     } else {
-      this.hijriLabel = this.getEgyptGregorianLabel();
+      this.hijriLabel = hijriText || this.getEgyptGregorianLabel();
     }
 
     const fajr = this.cleanTime(timings.Fajr);
@@ -404,6 +418,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  private hasCachedTimings(): boolean {
+    try {
+      const raw = localStorage.getItem(this.cacheKey);
+      if (!raw) return false;
+      const parsed: TimingsCache = JSON.parse(raw);
+      return !!parsed?.timings;
+    } catch {
+      return false;
+    }
+  }
+
   private loadOfflineTimings(): void {
     this.loadingTimings = true;
     this.timingError = '';
@@ -536,6 +561,35 @@ export class HomeComponent implements OnInit, OnDestroy {
     const dayKey = cache.dayKey || '';
     const todayKey = this.getEgyptDateKey();
     return dayKey === todayKey || withinHours;
+  }
+
+  private isEgyptLocation(): boolean {
+    const city = (this.city || '').toLowerCase();
+    const country = (this.country || '').toLowerCase();
+    if (country.includes('egypt') || country.includes('مصر')) return true;
+    if (city.includes('cairo') || city.includes('القاهرة')) return true;
+    return false;
+  }
+
+  private getEgyptDateParam(): string {
+    try {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Africa/Cairo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).formatToParts(new Date());
+      const day = parts.find((p) => p.type === 'day')?.value || '';
+      const month = parts.find((p) => p.type === 'month')?.value || '';
+      const year = parts.find((p) => p.type === 'year')?.value || '';
+      return `${day}-${month}-${year}`;
+    } catch {
+      const d = new Date();
+      const day = d.getDate().toString().padStart(2, '0');
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
   }
 
   private getEgyptDateKey(): string {
