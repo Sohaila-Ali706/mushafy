@@ -123,7 +123,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.restoreCachedVerse();
-    const hasFreshTimings = this.restoreCachedTimings();
+    const hasFreshTimings = this.restoreCachedTimings(true);
     if (OFFLINE_MODE) {
       if (!hasFreshTimings) {
         this.loadOfflineTimings();
@@ -218,9 +218,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!timings) return;
     const hijri = res?.data?.date?.hijri;
     if (hijri?.day && hijri?.month?.ar && hijri?.year) {
-      this.hijriLabel = `${hijri.day} ${hijri.month.ar} ${hijri.year}`;
+      const gregorian = this.getEgyptGregorianLabel();
+      this.hijriLabel = `${hijri.day} ${hijri.month.ar} ${hijri.year}${gregorian ? ' - ' + gregorian : ''}`;
     } else if (res?.data?.date?.readable) {
-      this.hijriLabel = res.data.date.readable;
+      this.hijriLabel = `${res.data.date.readable} - ${this.getEgyptGregorianLabel()}`;
+    } else {
+      this.hijriLabel = this.getEgyptGregorianLabel();
     }
 
     const fajr = this.cleanTime(timings.Fajr);
@@ -452,10 +455,11 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private saveCache(timings: Timings): void {
     const payload: TimingsCache = {
-      savedAt: new Date().toDateString(),
+      savedAt: new Date().toISOString(),
       timings,
       locationLabel: this.locationLabel,
-      hijriLabel: this.hijriLabel
+      hijriLabel: this.hijriLabel,
+      dayKey: this.getEgyptDateKey()
     };
     try {
       localStorage.setItem(this.cacheKey, JSON.stringify(payload));
@@ -464,14 +468,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private restoreCachedTimings(): boolean {
+  private restoreCachedTimings(allowStale = false): boolean {
     try {
       const raw = localStorage.getItem(this.cacheKey);
       if (!raw) return false;
       const parsed: TimingsCache = JSON.parse(raw);
-      if (!parsed?.timings || parsed.savedAt !== new Date().toDateString()) return false;
+      if (!parsed?.timings) return false;
+      const isFresh = this.isCacheFresh(parsed);
+      if (!isFresh && !allowStale) return false;
       if (parsed.locationLabel) this.locationLabel = parsed.locationLabel;
       if (parsed.hijriLabel) this.hijriLabel = parsed.hijriLabel;
+      if (!parsed.hijriLabel) this.hijriLabel = this.getEgyptGregorianLabel();
       this.prayers = [
         {
           name: 'الفجر',
@@ -514,10 +521,46 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.updateCountdown();
       this.startCountdownTimer();
       this.loadingTimings = false;
-      return true;
+      return isFresh;
     } catch {
       // ignore caching errors
       return false;
+    }
+  }
+
+  private isCacheFresh(cache: TimingsCache): boolean {
+    const now = Date.now();
+    const savedAt = Date.parse(cache.savedAt || '');
+    const withinHours =
+      Number.isFinite(savedAt) && now - savedAt < this.cacheHours * 60 * 60 * 1000;
+    const dayKey = cache.dayKey || '';
+    const todayKey = this.getEgyptDateKey();
+    return dayKey === todayKey || withinHours;
+  }
+
+  private getEgyptDateKey(): string {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Africa/Cairo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  private getEgyptGregorianLabel(): string {
+    try {
+      return new Intl.DateTimeFormat('ar-EG', {
+        timeZone: 'Africa/Cairo',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(new Date());
+    } catch {
+      return new Date().toDateString();
     }
   }
 }
