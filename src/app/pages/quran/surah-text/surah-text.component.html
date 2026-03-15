@@ -33,7 +33,15 @@
                 [attr.data-surah]="section.number"
                 [attr.data-ayah]="ayah.numberInSurah">
             <span class="ayah-text">{{ayah.text}}</span>
-            <span class="ayah-number">{{ayah.numberInSurah}}</span>
+            <button class="ayah-number"
+                    type="button"
+                    (click)="toggleBookmark(section.number, ayah.numberInSurah, $event)"
+                    [class.bookmarked]="isBookmarked(section.number, ayah.numberInSurah)"
+                    aria-label="حفظ موضع الآية">
+              {{ayah.numberInSurah}}
+              <span class="bookmark-icon material-symbols-outlined"
+                    *ngIf="isBookmarked(section.number, ayah.numberInSurah)">bookmark</span>
+            </button>
           </span>
         </p>
       </div>

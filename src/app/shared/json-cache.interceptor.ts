@@ -40,9 +40,12 @@ export class JsonCacheInterceptor implements HttpInterceptor {
   private shouldCache(url: string): boolean {
     return (
       url.includes('/api/azkar') ||
+      url.includes('hisnmuslim.com') ||
       url.includes('/api/hadith') ||
+      url.includes('api.hadith.gading.dev') ||
       url.includes('quranenc.com') ||
-      url.includes('api.alquran.cloud/v1/surah')
+      url.includes('api.alquran.cloud/v1/surah') ||
+      url.includes('api.alquran.cloud/v1/edition')
     );
   }
 

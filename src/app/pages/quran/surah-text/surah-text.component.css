@@ -240,6 +240,28 @@
   font-size: 12px;
   margin: 0 8px 0 2px;
   vertical-align: middle;
+  background: #fff8e8;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  line-height: 1;
+}
+
+.ayah-number.bookmarked {
+  border-color: #d5a846;
+  box-shadow: 0 0 0 2px rgba(213, 168, 70, 0.2);
+}
+
+.ayah-number .bookmark-icon {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  font-size: 14px;
+  color: #d5a846;
+  background: #fff;
+  border-radius: 50%;
+  border: 1px solid rgba(213, 168, 70, 0.4);
+  padding: 2px;
 }
 
 .drawer-backdrop {

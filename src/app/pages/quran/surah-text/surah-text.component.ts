@@ -33,6 +33,12 @@ type LastRead = {
   surahName?: string;
 };
 
+type AyahBookmark = {
+  surahNumber: number;
+  ayah: number;
+  savedAt: string;
+};
+
 type MushafSection = {
   number: number;
   name: string;
@@ -58,6 +64,7 @@ export class SurahTextComponent implements OnInit, OnDestroy {
   loadingMore = false;
   allLoaded = false;
   private readonly progressKey = 'mushafy_mushaf_progress';
+  private readonly bookmarkKey = 'mushafy_ayah_bookmark';
   private readonly batchSize = 5;
   private readonly quranCacheName = 'mushafy-quran-json-v1';
   private loadedCount = 0;
@@ -118,12 +125,18 @@ export class SurahTextComponent implements OnInit, OnDestroy {
       );
       this.surahList = listRes?.data ?? [];
       const progressSurah = this.getProgressSurah();
+      const bookmark = this.getBookmark();
       const initialTarget = Math.max(this.batchSize, this.surahNumber);
       await this.loadUntil(initialTarget);
       this.mushafLoaded = true;
       this.loading = false;
       setTimeout(() => this.scrollToSurah(this.surahNumber), 0);
-      if (progressSurah <= this.loadedCount) {
+      if (bookmark) {
+        this.ensureSurahLoaded(bookmark.surahNumber).then(() => {
+          setTimeout(() => this.scrollToAyah(bookmark.surahNumber, bookmark.ayah), 0);
+          this.saveLastRead(bookmark.surahNumber);
+        });
+      } else if (progressSurah <= this.loadedCount) {
         this.restoreScroll();
       } else {
         this.loadUntil(progressSurah).then(() => {
@@ -201,6 +214,27 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     }, 200);
   }
 
+  toggleBookmark(surahNumber: number, ayahNumber: number, event: MouseEvent): void {
+    event.stopPropagation();
+    const existing = this.getBookmark();
+    if (existing && existing.surahNumber === surahNumber && existing.ayah === ayahNumber) {
+      localStorage.removeItem(this.bookmarkKey);
+      return;
+    }
+    const payload: AyahBookmark = {
+      surahNumber,
+      ayah: ayahNumber,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(this.bookmarkKey, JSON.stringify(payload));
+    this.saveLastRead(surahNumber);
+  }
+
+  isBookmarked(surahNumber: number, ayahNumber: number): boolean {
+    const mark = this.getBookmark();
+    return !!mark && mark.surahNumber === surahNumber && mark.ayah === ayahNumber;
+  }
+
   private saveScroll(): void {
     try {
       const currentAyah = this.findCurrentAyah();
@@ -248,6 +282,14 @@ export class SurahTextComponent implements OnInit, OnDestroy {
     } catch {
       // ignore storage errors
     }
+  }
+
+  private scrollToAyah(surahNumber: number, ayah: number): void {
+    const target = document.getElementById(`ayah-${surahNumber}-${ayah}`);
+    if (!target) return;
+    const offset = 110;
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'auto' });
   }
 
   private findCurrentAyah(): { surahNumber: number; ayah: number } | null {
@@ -446,6 +488,22 @@ export class SurahTextComponent implements OnInit, OnDestroy {
       return Number.isFinite(surahNumber) && surahNumber > 0 ? surahNumber : 1;
     } catch {
       return 1;
+    }
+  }
+
+  private getBookmark(): AyahBookmark | null {
+    try {
+      const raw = localStorage.getItem(this.bookmarkKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const surahNumber = Number(parsed?.surahNumber ?? 0);
+      const ayah = Number(parsed?.ayah ?? 0);
+      if (!Number.isFinite(surahNumber) || !Number.isFinite(ayah) || surahNumber <= 0 || ayah <= 0) {
+        return null;
+      }
+      return { surahNumber, ayah, savedAt: parsed?.savedAt || '' };
+    } catch {
+      return null;
     }
   }
 

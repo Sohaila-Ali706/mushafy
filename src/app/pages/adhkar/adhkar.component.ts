@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { OFFLINE_BASE, OFFLINE_MODE, buildUrl } from '../../shared/offline';
+import { IS_NATIVE, resolveApiUrl } from '../../shared/runtime';
 
 type AdhkarCategory = {
   id: number | string;
@@ -38,7 +38,7 @@ export class AdhkarComponent implements OnInit {
   }
 
   fetchCategories(): void {
-    const url = buildUrl('adhkar/husn.json', '/api/azkar/api/husn.json');
+    const url = resolveApiUrl('/api/azkar/api/husn.json', 'https://www.hisnmuslim.com/api/husn.json');
     this.http.get<any>(url).subscribe({
       next: (res) => {
         const main = Array.isArray(res?.MAIN) ? res.MAIN : [];
@@ -49,13 +49,21 @@ export class AdhkarComponent implements OnInit {
             url: c?.LANGUAGE_URL || c?.url
           }));
           const arabic = languages.find((c: AdhkarCategory) => c.title.includes('العربية')) || languages[0];
-          const langUrl = arabic?.url || '/api/azkar/api/ar/husn_ar.json';
+          const fallback = resolveApiUrl(
+            '/api/azkar/api/ar/husn_ar.json',
+            'https://www.hisnmuslim.com/api/ar/husn_ar.json'
+          );
+          const langUrl = arabic?.url || fallback;
           this.fetchCategoryList(langUrl);
           return;
         }
         const languages = this.normalizeCategories(res);
         const arabic = languages.find((c) => c.title.includes('العربية')) || languages[0];
-        const langUrl = arabic?.url || '/api/azkar/api/ar/husn_ar.json';
+        const fallback = resolveApiUrl(
+          '/api/azkar/api/ar/husn_ar.json',
+          'https://www.hisnmuslim.com/api/ar/husn_ar.json'
+        );
+        const langUrl = arabic?.url || fallback;
         this.fetchCategoryList(langUrl);
       },
       error: () => {
@@ -227,7 +235,9 @@ export class AdhkarComponent implements OnInit {
   fetchCategoryItems(id: number | string, url?: string): void {
     this.loading = true;
     this.error = '';
-    const target = url ? this.toProxyUrl(url) : buildUrl(`adhkar/${id}.json`, `/api/azkar/api/ar/${id}.json`);
+    const target = url
+      ? this.toProxyUrl(url)
+      : resolveApiUrl(`/api/azkar/api/ar/${id}.json`, `https://www.hisnmuslim.com/api/ar/${id}.json`);
     this.http.get<any>(target).subscribe({
       next: (res) => {
         const list =
@@ -322,11 +332,14 @@ export class AdhkarComponent implements OnInit {
   }
 
   toProxyUrl(url: string): string {
-    if (OFFLINE_MODE) {
-      if (url.startsWith('/offline/')) return url;
-      if (url.includes('husn_ar.json')) return `${OFFLINE_BASE}/adhkar/husn_ar.json`;
-      const id = this.extractIdFromUrl(url);
-      if (id) return `${OFFLINE_BASE}/adhkar/${id}.json`;
+    if (IS_NATIVE) {
+      if (url.startsWith('/api/azkar')) {
+        return url.replace('/api/azkar', 'https://www.hisnmuslim.com');
+      }
+      if (url.startsWith('http://www.hisnmuslim.com')) {
+        return url.replace('http://www.hisnmuslim.com', 'https://www.hisnmuslim.com');
+      }
+      return url;
     }
     if (url.startsWith('/api/azkar')) return url;
     if (url.startsWith('https://www.hisnmuslim.com')) {
