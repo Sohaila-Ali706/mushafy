@@ -1,7 +1,6 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Location } from '@angular/common';
 import { Router } from '@angular/router';
-import { App } from '@capacitor/app';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 
 @Component({
@@ -21,26 +20,7 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(private router: Router, private location: Location) {}
 
   ngOnInit(): void {
-    if (!Capacitor.isNativePlatform()) return;
-    this.backHandler = App.addListener('backButton', ({ canGoBack }) => {
-      const atRoot = this.router.url === '/' || this.router.url === '';
-      if (atRoot) {
-        const now = Date.now();
-        if (now - this.lastBackPress < 2000) {
-          App.exitApp();
-          return;
-        }
-        this.lastBackPress = now;
-        this.showExitToastMessage();
-        return;
-      }
-
-      if (canGoBack) {
-        this.location.back();
-      } else {
-        this.router.navigateByUrl('/');
-      }
-    });
+    this.initBackButton();
   }
 
   ngOnDestroy(): void {
@@ -58,6 +38,39 @@ export class AppComponent implements OnInit, OnDestroy {
 
   scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  private async initBackButton(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      const mod = await import('@capacitor/app');
+      const appPlugin = mod?.App;
+      if (!appPlugin) return;
+      this.backHandler = appPlugin.addListener(
+        'backButton',
+        ({ canGoBack }: { canGoBack: boolean }) => {
+          const atRoot = this.router.url === '/' || this.router.url === '';
+          if (atRoot) {
+            const now = Date.now();
+            if (now - this.lastBackPress < 2000) {
+              appPlugin.exitApp();
+              return;
+            }
+            this.lastBackPress = now;
+            this.showExitToastMessage();
+            return;
+          }
+
+          if (canGoBack) {
+            this.location.back();
+          } else {
+            this.router.navigateByUrl('/');
+          }
+        }
+      );
+    } catch {
+      // ignore when running on web or plugin not available
+    }
   }
 
   private showExitToastMessage(): void {
