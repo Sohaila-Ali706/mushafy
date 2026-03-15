@@ -46,7 +46,7 @@ export class AppComponent implements OnInit, OnDestroy {
       const mod = await import('@capacitor/app');
       const appPlugin = mod?.App;
       if (!appPlugin) return;
-      this.backHandler = appPlugin.addListener(
+      this.backHandler = await appPlugin.addListener(
         'backButton',
         ({ canGoBack }: { canGoBack: boolean }) => {
           const atRoot = this.router.url === '/' || this.router.url === '';
