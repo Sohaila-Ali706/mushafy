@@ -115,7 +115,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   nextPrayerRawTime = '';
   countdown = '';
   private countdownTimer: number | undefined;
-  private readonly cacheKey = 'mushafy_prayer_timings_v1';
+  private readonly cacheKey = 'mushafy_prayer_timings_v2';
   private readonly verseCacheKey = 'mushafy_daily_verse_v1';
   private readonly cacheHours = 12;
 
@@ -128,8 +128,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (!hasFreshTimings) {
         this.loadOfflineTimings();
       }
-    } else if (!hasFreshTimings) {
-      this.useGeolocation();
+    } else {
+      this.useGeolocation(!hasFreshTimings);
     }
     this.loadDailyVerse();
   }
@@ -189,9 +189,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     const dateParam = this.isEgyptLocation()
       ? `&date=${this.getEgyptDateParam()}`
       : '';
+    const adjustParam = this.isEgyptLocation() ? '&adjustment=-1' : '';
     const url = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(
       city
-    )}&country=${encodeURIComponent(country)}&method=${this.method}${tzParam}${dateParam}`;
+    )}&country=${encodeURIComponent(country)}&method=${this.method}${tzParam}${dateParam}${adjustParam}`;
     this.http.get<TimingsResponse>(url).subscribe({
       next: (res) => this.updateFromResponse(res),
       error: () => {
@@ -213,7 +214,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     const dateParam = this.isEgyptLocation()
       ? `&date=${this.getEgyptDateParam()}`
       : '';
-    const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=${this.method}${tzParam}${dateParam}`;
+    const adjustParam = this.isEgyptLocation() ? '&adjustment=-1' : '';
+    const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=${this.method}${tzParam}${dateParam}${adjustParam}`;
     this.http.get<TimingsResponse>(url).subscribe({
       next: (res) => this.updateFromResponse(res),
       error: () => {
